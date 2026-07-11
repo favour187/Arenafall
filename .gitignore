@@ -1,0 +1,46 @@
+# Unity generated
+Library/
+Temp/
+obj/
+*.csproj
+*.sln
+*.sou
+*.user
+*.userprefs
+*.unityproj
+*.booproj
+*.pidb
+*.svd
+*.pdb
+
+# Builds
+Build/
+Builds/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+.idea/
+
+# Logs
+*.log
+crashlytics-*
+
+# Git LFS
+*.psd
+*.fbx
+*.tga
+*.hdr
+*.exr
+*.wav
+*.mp3
+*.mp4
+*.mov

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0A1628"/><stop offset="100%" stop-color="#1E3A5F"/></linearGradient></defs>
+  <rect width="800" height="200" fill="#050B14" rx="8"/>
+  <g transform="translate(30, 60)">
+    <!-- Heavy barrel -->
+    <rect x="280" y="28" width="200" height="14" fill="#8899AA" rx="3"/>
+    <rect x="280" y="26" width="200" height="6" fill="#AABBCC" rx="2"/>
+    <!-- Heat shield -->
+    <rect x="290" y="22" width="180" height="20" fill="#445566" rx="4" opacity="0.7"/>
+    <rect x="295" y="22" width="170" height="20" fill="none" stroke="#FF6B35" stroke-width="0.5" rx="3"/>
+    <!-- Vent holes -->
+    <circle cx="310" cy="32" r="2" fill="#050B14"/>
+    <circle cx="325" cy="32" r="2" fill="#050B14"/>
+    <circle cx="340" cy="32" r="2" fill="#050B14"/>
+    <circle cx="355" cy="32" r="2" fill="#050B14"/>
+    <circle cx="370" cy="32" r="2" fill="#050B14"/>
+    <circle cx="385" cy="32" r="2" fill="#050B14"/>
+    <circle cx="400" cy="32" r="2" fill="#050B14"/>
+    <circle cx="415" cy="32" r="2" fill="#050B14"/>
+    <circle cx="430" cy="32" r="2" fill="#050B14"/>
+    <circle cx="445" cy="32" r="2" fill="#050B14"/>
+    <!-- Receiver -->
+    <path d="M150,16 L280,16 L280,50 L150,50 Z" fill="url(#bg)" stroke="#1E3A5F" stroke-width="1"/>
+    <!-- Top rail -->
+    <rect x="155" y="14" width="120" height="4" fill="#667788"/>
+    <rect x="160" y="14" width="3" height="4" fill="#8899AA"/>
+    <rect x="170" y="14" width="3" height="4" fill="#8899AA"/>
+    <rect x="180" y="14" width="3" height="4" fill="#8899AA"/>
+    <rect x="190" y="14" width="3" height="4" fill="#8899AA"/>
+    <rect x="200" y="14" width="3" height="4" fill="#8899AA"/>
+    <!-- Stock -->
+    <path d="M0,16 L150,16 L150,50 L0,50 Z" fill="url(#bg)" stroke="#1E3A5F" stroke-width="1"/>
+    <!-- Buttpad -->
+    <rect x="-8" y="16" width="12" height="34" fill="#2A3440" rx="4"/>
+    <rect x="-8" y="18" width="12" height="5" fill="#445566" rx="1"/>
+    <rect x="-8" y="28" width="12" height="5" fill="#445566" rx="1"/>
+    <rect x="-8" y="38" width="12" height="5" fill="#445566" rx="1"/>
+    <!-- Drum magazine -->
+    <ellipse cx="230" cy="65" rx="30" ry="25" fill="#445566" stroke="#667788" stroke-width="2"/>
+    <ellipse cx="230" cy="65" rx="22" ry="18" fill="#1E3A5F"/>
+    <circle cx="230" cy="65" r="5" fill="#FF6B35"/>
+    <rect x="228" y="47" width="4" height="8" fill="#667788"/>
+    <!-- Drum ammo window -->
+    <rect x="215" y="58" width="30" height="14" fill="#0A1628" rx="2" opacity="0.6"/>
+    <text x="230" y="69" font-family="monospace" font-size="8" fill="#FF6B35" text-anchor="middle">100</text>
+    <!-- Bipod -->
+    <rect x="350" y="40" width="4" height="20" fill="#667788"/>
+    <rect x="330" y="60" width="44" height="4" fill="#8899AA" rx="2"/>
+    <rect x="335" y="64" width="10" height="40" fill="#667788"/>
+    <rect x="359" y="64" width="10" height="40" fill="#667788"/>
+    <rect x="333" y="104" width="14" height="3" fill="#AABBCC" rx="1"/>
+    <rect x="357" y="104" width="14" height="3" fill="#AABBCC" rx="1"/>
+    <!-- Grip -->
+    <path d="M165,50 L158,80 L182,80 L175,50 Z" fill="#1E3A5F" stroke="#2A3440" stroke-width="1"/>
+    <!-- Trigger -->
+    <rect x="195" y="50" width="3" height="10" fill="#8899AA"/>
+    <path d="M190,50 L190,60 Q195,63 205,60 L205,50" fill="none" stroke="#667788" stroke-width="2"/>
+    <!-- Orange accent -->
+    <rect x="150" y="46" width="130" height="2" fill="#FF6B35"/>
+  </g>
+  <text x="400" y="170" font-family="monospace" font-size="16" fill="#FF6B35" text-anchor="middle" letter-spacing="3">LMG-60 SUPPRESSOR // 7.62mm LIGHT MACHINE GUN</text>
+  <text x="400" y="188" font-family="monospace" font-size="11" fill="#607080" text-anchor="middle">AUTOMATIC • 100-ROUND DRUM • SUPPRESSIVE FIRE</text>
+</svg>

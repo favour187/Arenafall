@@ -1,0 +1,24 @@
+# Arena Fall — Discord Bot
+# Easy deploy on Render as a background worker
+
+name: arenafall-discord-bot
+env: node
+region: oregon
+plan: free
+branch: main
+rootDir: Backend/discord-bot
+buildCommand: npm install
+startCommand: node src/bot.js
+envVars:
+  - key: DISCORD_TOKEN
+    sync: false  # You'll paste your bot token here
+  - key: DISCORD_GUILD_ID
+    sync: false
+  - key: API_URL
+    value: https://arenafall-api.onrender.com/api/v1
+  - key: ADMIN_ROLE_ID
+    sync: false
+  - key: LOG_CHANNEL_ID
+    sync: false
+  - key: REPORT_CHANNEL_ID
+    sync: false

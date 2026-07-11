@@ -1,0 +1,15 @@
+# Arena Fall — Public Web Frontend
+# Player profiles, leaderboards, match history
+
+name: arenafall-web
+env: static
+region: oregon
+plan: free
+branch: main
+rootDir: Backend/web-frontend
+buildCommand: echo "Static site"
+staticPublishPath: .
+routes:
+  - type: rewrite
+    source: /*
+    destination: /index.html

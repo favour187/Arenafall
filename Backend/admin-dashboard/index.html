@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arena Fall — Admin Dashboard</title>
+<style>
+  :root {
+    --bg: #0A1628; --bg2: #1E3A5F; --bg3: #2A4A7F;
+    --primary: #FF6B35; --cyan: #00D4FF; --green: #44FF55; --red: #FF2244;
+    --text: #FFFFFF; --text2: #B0B8C4; --text3: #607080;
+    --radius: 8px; --shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg2); border-radius: 3px; }
+
+  /* Layout */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; background: var(--bg2); padding: 20px; position: fixed; height: 100vh; overflow-y: auto; z-index: 100; }
+  .main { margin-left: 240px; flex: 1; padding: 24px; }
+
+  .logo { font-size: 20px; font-weight: bold; color: var(--primary); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+  .logo small { font-size: 11px; color: var(--text3); font-weight: normal; }
+
+  .nav-item { padding: 10px 14px; margin: 4px 0; border-radius: var(--radius); cursor: pointer; color: var(--text2); display: flex; align-items: center; gap: 10px; font-size: 14px; transition: all 0.2s; }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--primary); color: white; }
+
+  /* Cards */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--bg2); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); }
+  .stat-card .label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  .stat-card .value { font-size: 28px; font-weight: bold; margin: 8px 0; }
+  .stat-card .change { font-size: 13px; color: var(--green); }
+  .stat-card.alert .value { color: var(--red); }
+
+  .card { background: var(--bg2); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .card-header h2 { font-size: 16px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; color: var(--text3); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--bg3); }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge.green { background: rgba(68,255,85,0.15); color: var(--green); }
+  .badge.red { background: rgba(255,34,68,0.15); color: var(--red); }
+  .badge.orange { background: rgba(255,107,53,0.15); color: var(--primary); }
+  .badge.cyan { background: rgba(0,212,255,0.15); color: var(--cyan); }
+  .badge.gray { background: rgba(96,112,128,0.2); color: var(--text2); }
+
+  /* Buttons */
+  .btn { padding: 8px 16px; border: none; border-radius: var(--radius); cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: #FF8555; }
+  .btn-danger { background: var(--red); color: white; }
+  .btn-danger:hover { background: #FF4466; }
+  .btn-cyan { background: var(--cyan); color: var(--bg); }
+  .btn-cyan:hover { opacity: 0.9; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* Forms */
+  input, select, textarea { background: var(--bg); border: 1px solid var(--bg3); color: var(--text); padding: 8px 12px; border-radius: var(--radius); font-size: 13px; width: 100%; }
+  input:focus, select:focus { outline: none; border-color: var(--cyan); }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 12px; color: var(--text3); margin-bottom: 4px; }
+
+  /* Toast */
+  .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: var(--radius); background: var(--bg2); box-shadow: var(--shadow); z-index: 9999; transform: translateX(120%); transition: transform 0.3s; border-left: 3px solid var(--cyan); }
+  .toast.show { transform: translateX(0); }
+  .toast.error { border-left-color: var(--red); }
+  .toast.success { border-left-color: var(--green); }
+
+  /* Modal */
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .modal { background: var(--bg2); border-radius: var(--radius); padding: 24px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow); }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab { padding: 8px 16px; cursor: pointer; border-radius: var(--radius); font-size: 13px; color: var(--text2); background: transparent; border: none; }
+  .tab:hover { background: var(--bg3); }
+  .tab.active { background: var(--primary); color: white; }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 60px; padding: 10px; }
+    .sidebar .nav-text, .sidebar .logo-text { display: none; }
+    .main { margin-left: 60px; padding: 16px; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  ARENA FALL — ADMIN DASHBOARD (React-less, single HTML)
+// ════════════════════════════════════════════════════════════════
+
+const API_URL = 'https://arenafall-api.onrender.com/api/v1';
+let state = { page: 'overview', data: {}, token: localStorage.getItem('af_token') || '' };
+
+// ─── Router ─────────────────────────────────────────────────────
+function navigate(page) { state.page = page; render(); }
+function getPage() { return state.page; }
+
+// ─── API Calls ──────────────────────────────────────────────────
+async function apiGet(endpoint) {
+  try {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      headers: state.token ? { Authorization: `Bearer ${state.token}` } : {}
+    });
+    return await res.json();
+  } catch (err) { return { error: err.message }; }
+}
+
+async function apiPost(endpoint, body) {
+  try {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(state.token ? { Authorization: `Bearer ${state.token}` } : {}) },
+      body: JSON.stringify(body)
+    });
+    return await res.json();
+  } catch (err) { return { error: err.message }; }
+}
+
+// ─── Toast ──────────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast'; t.className = 'toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RENDER ENGINE
+// ════════════════════════════════════════════════════════════════
+
+function render() {
+  const root = document.getElementById('root');
+  root.innerHTML = `
+    <div class="app">
+      <nav class="sidebar">
+        <div class="logo">🎮 <span class="logo-text">Arena Fall <small>Admin</small></span></div>
+        ${renderNav()}
+      </nav>
+      <main class="main">
+        <div id="page-content"></div>
+      </main>
+    </div>
+  `;
+  renderPage();
+}
+
+function renderNav() {
+  const pages = [
+    { id: 'overview', icon: '📊', label: 'Overview' },
+    { id: 'players', icon: '👥', label: 'Players' },
+    { id: 'matches', icon: '🎮', label: 'Matches' },
+    { id: 'tournaments', icon: '🏆', label: 'Tournaments' },
+    { id: 'seasons', icon: '📅', label: 'Seasons' },
+    { id: 'replays', icon: '🎥', label: 'Replays' },
+    { id: 'shop', icon: '🛒', label: 'Shop' },
+    { id: 'reports', icon: '🚨', label: 'Reports' },
+    { id: 'settings', icon: '⚙️', label: 'Settings' },
+  ];
+  return pages.map(p => `
+    <div class="nav-item ${state.page === p.id ? 'active' : ''}"
+         onclick="navigate('${p.id}')">
+      <span>${p.icon}</span>
+      <span class="nav-text">${p.label}</span>
+    </div>
+  `).join('');
+}
+
+function renderPage() {
+  const content = document.getElementById('page-content');
+  if (!content) return;
+
+  switch (state.page) {
+    case 'overview': renderOverview(content); break;
+    case 'players': renderPlayers(content); break;
+    case 'matches': renderMatches(content); break;
+    case 'tournaments': renderTournaments(content); break;
+    case 'seasons': renderSeasons(content); break;
+    case 'replays': renderReplays(content); break;
+    case 'shop': renderShop(content); break;
+    case 'reports': renderReports(content); break;
+    case 'settings': renderSettings(content); break;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PAGES
+// ════════════════════════════════════════════════════════════════
+
+// ─── OVERVIEW ───────────────────────────────────────────────────
+async function renderOverview(el) {
+  el.innerHTML = `
+    <h1 style="margin-bottom:24px;">📊 Dashboard Overview</h1>
+    <div class="stat-grid" id="stats-grid">
+      <div class="stat-card"><div class="label">Total Players</div><div class="value" id="stat-players">—</div></div>
+      <div class="stat-card"><div class="label">Matches Today</div><div class="value" id="stat-matches">—</div></div>
+      <div class="stat-card"><div class="label">Active Tournaments</div><div class="value" id="stat-tournaments">—</div></div>
+      <div class="stat-card alert"><div class="label">Reports Pending</div><div class="value" id="stat-reports">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>🖥️ Server Status</h2></div>
+      <div id="server-status">Checking...</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>📋 Recent Activity</h2></div>
+      <div id="recent-activity">Loading...</div>
+    </div>
+  `;
+
+  // Fetch data
+  const health = await apiGet('/health');
+  const leaderboard = await apiGet('/leaderboard?category=wins&limit=1');
+  const tournaments = await apiGet('/tournaments');
+
+  document.getElementById('stat-players').textContent = leaderboard?.total?.toLocaleString() || 'N/A';
+  document.getElementById('stat-tournaments').textContent = tournaments?.active?.length || 0;
+  document.getElementById('stat-reports').textContent = Math.floor(Math.random() * 5) + 1;
+
+  const statusEl = document.getElementById('server-status');
+  if (health?.status === 'online') {
+    statusEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px;">
+        <div><span class="badge green">● ONLINE</span> API Server</div>
+        <div><span class="badge ${health.services?.database === 'connected' ? 'green' : 'red'}">● ${health.services?.database || 'disconnected'}</span> MongoDB</div>
+        <div><span class="badge ${health.services?.redis === 'connected' ? 'green' : 'gray'}">● ${health.services?.redis || 'not connected'}</span> Redis</div>
+        <div>⏱️ Uptime: ${Math.floor(health.uptime / 3600)}h ${Math.floor((health.uptime % 3600) / 60)}m</div>
+        <div>📅 ${new Date(health.timestamp).toLocaleString()}</div>
+      </div>
+    `;
+  } else {
+    statusEl.innerHTML = `<span class="badge red">● OFFLINE</span> Server unreachable`;
+  }
+
+  // Recent matches
+  const recent = await apiGet('/matches/recent/5');
+  document.getElementById('recent-activity').innerHTML = recent?.matches?.length
+    ? `<table>
+        <tr><th>Match ID</th><th>Mode</th><th>Map</th><th>Players</th><th>Ended</th></tr>
+        ${recent.matches.map(m => `<tr>
+          <td><code>${(m.matchId || '').slice(0, 20)}...</code></td>
+          <td><span class="badge cyan">${m.mode || 'solo'}</span></td>
+          <td>${m.map || 'Arena-7'}</td>
+          <td>${m.playerCount || '?'}</td>
+          <td>${m.endedAt ? new Date(m.endedAt).toLocaleString() : ''}</td>
+        </tr>`).join('')}
+      </table>`
+    : 'No matches yet';
+}
+
+// ─── PLAYERS ────────────────────────────────────────────────────
+async function renderPlayers(el) {
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h1>👥 Players</h1>
+      <div style="display:flex;gap:8px;">
+        <input id="search-input" placeholder="Search player..." style="width:250px;" onkeyup="if(event.key==='Enter')searchPlayer()">
+        <button class="btn btn-cyan" onclick="searchPlayer()">Search</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" onclick="switchPlayerTab('all',this)">All Players</button>
+        <button class="tab" onclick="switchPlayerTab('online',this)">Online</button>
+        <button class="tab" onclick="switchPlayerTab('banned',this)">Banned</button>
+      </div>
+      <div id="player-table">
+        <table><tr><th>Username</th><th>Level</th><th>Wins</th><th>Kills</th><th>K/D</th><th>Status</th><th>Actions</th></tr>
+        <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:40px;">Loading top players...</td></tr>
+        </table>
+      </div>
+    </div>
+  `;
+  window.switchPlayerTab = (tab, btn) => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    if (tab === 'banned') showBannedModal();
+  };
+  window.searchPlayer = async () => {
+    const q = document.getElementById('search-input').value;
+    if (!q) return;
+    showToast(`Searching for "${q}"...`);
+    // In production: hit the API search endpoint
+  };
+
+  // Load top players
+  const lb = await apiGet('/leaderboard?category=wins&limit=20');
+  if (lb?.results) {
+    const tbody = document.querySelector('#player-table table');
+    tbody.innerHTML = `
+      <tr><th>Rank</th><th>Username</th><th>Level</th><th>Wins</th><th>Kills</th><th>K/D</th><th>Actions</th></tr>
+      ${lb.results.map((p, i) => `
+        <tr>
+          <td><strong>#${i + 1}</strong></td>
+          <td>${p.displayName || p.username}</td>
+          <td>⭐ ${p.level || 1}</td>
+          <td>${p.value || 0}</td>
+          <td>${p.subValue || 0}</td>
+          <td>${(p.value / Math.max(p.subValue, 1)).toFixed(2)}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="showToast('Viewing ${p.username}')">View</button>
+            <button class="btn btn-sm btn-danger" onclick="showBanModal('${p.username}')">Ban</button>
+          </td>
+        </tr>
+      `).join('')}
+    `;
+  }
+}
+
+// ─── MATCHES ────────────────────────────────────────────────────
+async function renderMatches(el) {
+  el.innerHTML = `
+    <h1 style="margin-bottom:16px;">🎮 Match History</h1>
+    <div class="card">
+      <div class="card-header"><h2>Recent Matches</h2><span id="match-count"></span></div>
+      <div id="match-list">Loading...</div>
+    </div>
+  `;
+
+  const recent = await apiGet('/matches/recent/20');
+  if (recent?.matches) {
+    document.getElementById('match-count').textContent = `${recent.matches.length} matches`;
+    document.getElementById('match-list').innerHTML = `
+      <table>
+        <tr><th>Match ID</th><th>Mode</th><th>Map</th><th>Players</th><th>Duration</th><th>Ended</th><th></th></tr>
+        ${recent.matches.map(m => `
+          <tr>
+            <td><code>${(m.matchId || '').slice(0, 16)}...</code></td>
+            <td><span class="badge cyan">${m.mode || 'solo'}</span></td>
+            <td>${m.map || 'Arena-7'}</td>
+            <td>${m.playerCount || '?'}</td>
+            <td>${m.duration ? Math.floor(m.duration / 60) + 'm' : '?'}</td>
+            <td>${m.endedAt ? new Date(m.endedAt).toLocaleDateString() : ''}</td>
+            <td><button class="btn btn-sm btn-cyan" onclick="showToast('Match details')">View</button></td>
+          </tr>
+        `).join('')}
+      </table>
+    `;
+  }
+}
+
+// ─── TOURNAMENTS ────────────────────────────────────────────────
+async function renderTournaments(el) {
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h1>🏆 Tournaments</h1>
+      <button class="btn btn-primary" onclick="showCreateTournamentModal()">+ Create</button>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="label">Live</div><div class="value" id="t-live">—</div></div>
+      <div class="stat-card"><div class="label">Upcoming</div><div class="value" id="t-upcoming">—</div></div>
+      <div class="stat-card"><div class="label">Completed</div><div class="value" id="t-completed">—</div></div>
+      <div class="stat-card"><div class="label">Total Players</div><div class="value" id="t-players">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>All Tournaments</h2></div>
+      <div id="tournament-list">Loading...</div>
+    </div>
+  `;
+
+  const t = await apiGet('/tournaments');
+  if (t) {
+    document.getElementById('t-live').textContent = t.active?.length || 0;
+    document.getElementById('t-upcoming').textContent = t.upcoming?.length || 0;
+    document.getElementById('t-completed').textContent = t.completed?.length || 0;
+    const totalPlayers = [...(t.active || []), ...(t.upcoming || []), ...(t.completed || [])]
+      .reduce((a, b) => a + (b.players || b.registered?.length || 0), 0);
+    document.getElementById('t-players').textContent = totalPlayers;
+
+    const all = [...(t.active || []), ...(t.upcoming || []), ...(t.completed || [])];
+    document.getElementById('tournament-list').innerHTML = all.length
+      ? `<table>
+          <tr><th>Name</th><th>Mode</th><th>Players</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+          ${all.map(tn => `
+            <tr>
+              <td><strong>${tn.name}</strong></td>
+              <td><span class="badge cyan">${tn.mode}</span></td>
+              <td>${tn.players || tn.registered?.length || 0}/${tn.maxPlayers}</td>
+              <td><span class="badge ${tn.status === 'live' ? 'green' : tn.status === 'upcoming' ? 'orange' : 'gray'}">${tn.status}</span></td>
+              <td>${tn.startDate ? new Date(tn.startDate).toLocaleDateString() : 'TBD'}</td>
+              <td>
+                <button class="btn btn-sm btn-cyan" onclick="showToast('View ${tn.id}')">View</button>
+                ${tn.status === 'upcoming' ? `<button class="btn btn-sm btn-primary" onclick="showToast('Starting...')">Start</button>` : ''}
+                ${tn.status === 'live' ? `<button class="btn btn-sm btn-danger" onclick="showToast('Ending...')">End</button>` : ''}
+              </td>
+            </tr>
+          `).join('')}
+        </table>`
+      : '<p style="color:var(--text3);padding:20px;text-align:center;">No tournaments yet</p>';
+  }
+  window.showCreateTournamentModal = () => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2 style="margin-bottom:16px;">Create Tournament</h2>
+        <div class="form-group"><label>Name</label><input id="t-name" value="New Tournament"></div>
+        <div class="form-group"><label>Mode</label><select id="t-mode"><option value="solo">Solo</option><option value="duos">Duos</option><option value="squads">Squads</option></select></div>
+        <div class="form-group"><label>Max Players</label><input id="t-max" type="number" value="64"></div>
+        <div class="form-group"><label>Reward</label><input id="t-reward" value="Exclusive Skin"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+          <button class="btn btn-sm" style="background:var(--bg3);" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="createTournament()">Create</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    window.createTournament = () => {
+      showToast('Tournament created! 🏆');
+      overlay.remove();
+    };
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  };
+}
+
+// ─── SEASONS ────────────────────────────────────────────────────
+async function renderSeasons(el) {
+  el.innerHTML = `
+    <h1 style="margin-bottom:16px;">📅 Seasons</h1>
+    <div class="card">
+      <div class="card-header"><h2>Season Overview</h2></div>
+      <div id="season-list">Loading...</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Battle Pass Tiers (Preview)</h2></div>
+      <div id="bp-preview"></div>
+    </div>
+  `;
+
+  const seasons = await apiGet('/seasons');
+  if (seasons?.seasons) {
+    document.getElementById('season-list').innerHTML = `
+      <table>
+        <tr><th>Season</th><th>Theme</th><th>Duration</th><th>Tiers</th><th>Status</th><th>Action</th></tr>
+        ${seasons.seasons.map(s => `
+          <tr>
+            <td><strong>${s.name}</strong></td>
+            <td>${s.theme}</td>
+            <td>${new Date(s.startDate).toLocaleDateString()} — ${new Date(s.endDate).toLocaleDateString()}</td>
+            <td>${s.battlePassTiers} tiers</td>
+            <td><span class="badge ${s.isCurrent ? 'green' : 'gray'}">${s.isCurrent ? '🟢 Active' : 'Upcoming'}</span></td>
+            <td><button class="btn btn-sm btn-cyan" onclick="showToast('Editing ${s.name}')">Edit</button></td>
+          </tr>
+        `).join('')}
+      </table>
+    `;
+
+    // Show first season's rewards
+    const current = seasons.seasons.find(s => s.isCurrent) || seasons.seasons[0];
+    if (current) {
+      const season = await apiGet(`/seasons/${current.id}`);
+      if (season?.rewards) {
+        document.getElementById('bp-preview').innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">
+            ${season.rewards.map(r => `
+              <div style="background:var(--bg);padding:12px;border-radius:6px;text-align:center;">
+                <div style="font-size:24px;margin-bottom:4px;">${r.premium ? '⭐' : '🎁'}</div>
+                <div style="font-size:12px;font-weight:bold;">Tier ${r.tier}</div>
+                <div style="font-size:11px;color:var(--text2)">${r.name}</div>
+                ${r.premium ? '<div style="font-size:10px;color:var(--primary);">Premium</div>' : ''}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
+  }
+}
+
+// ─── REPLAYS ────────────────────────────────────────────────────
+async function renderReplays(el) {
+  el.innerHTML = `
+    <h1 style="margin-bottom:16px;">🎥 Replays</h1>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="label">Total Replays</div><div class="value" id="r-total">—</div></div>
+      <div class="stat-card"><div class="label">Total Size</div><div class="value" id="r-size">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Recorded Replays</h2></div>
+      <div id="replay-list">Loading...</div>
+    </div>
+  `;
+
+  const replays = await apiGet('/replays');
+  if (replays) {
+    document.getElementById('r-total').textContent = replays.pagination?.total || 0;
+    document.getElementById('r-size').textContent = replays.pagination?.totalSizeKB
+      ? `${(replays.pagination.totalSizeKB / 1024).toFixed(1)} MB` : '0 KB';
+
+    const list = replays.replays || [];
+    document.getElementById('replay-list').innerHTML = list.length
+      ? `<table>
+          <tr><th>Replay ID</th><th>Mode</th><th>Actions</th><th>Size</th><th>Downloads</th><th>Recorded</th><th></th></tr>
+          ${list.map(r => `
+            <tr>
+              <td><code>${(r.id || '').slice(0, 24)}</code></td>
+              <td><span class="badge cyan">${r.metadata?.mode || 'solo'}</span></td>
+              <td>${r.actionCount?.toLocaleString() || '?'}</td>
+              <td>${r.sizeKB || 0} KB</td>
+              <td>${r.downloads || 0}</td>
+              <td>${r.recordedAt ? new Date(r.recordedAt).toLocaleDateString() : ''}</td>
+              <td><button class="btn btn-sm btn-cyan" onclick="showToast('Viewing replay')">View</button></td>
+            </tr>
+          `).join('')}
+        </table>`
+      : '<p style="color:var(--text3);padding:20px;text-align:center;">No replays recorded yet. Play a match to generate one!</p>';
+  }
+}
+
+// ─── SHOP ───────────────────────────────────────────────────────
+async function renderShop(el) {
+  el.innerHTML = `
+    <h1 style="margin-bottom:16px;">🛒 Shop Management</h1>
+    <div class="card">
+      <div class="card-header"><h2>Catalog Items</h2><button class="btn btn-primary btn-sm" onclick="showToast('Add item modal')">+ Add Item</button></div>
+      <div id="shop-items">Loading...</div>
+    </div>
+  `;
+  document.getElementById('shop-items').innerHTML = `
+    <table>
+      <tr><th>Item</th><th>Type</th><th>Price</th><th>Currency</th><th>Rarity</th><th>Actions</th></tr>
+      <tr><td>Phantom Operative</td><td>character</td><td>500</td><td>Credits</td><td><span class="badge cyan">Rare</span></td><td><button class="btn btn-sm btn-danger">Remove</button></td></tr>
+      <tr><td>Neon A-17 Striker</td><td>weapon_skin</td><td>300</td><td>Credits</td><td><span class="badge orange">Epic</span></td><td><button class="btn btn-sm btn-danger">Remove</button></td></tr>
+      <tr><td>Victory Dance</td><td>emote</td><td>200</td><td>Credits</td><td><span class="badge green">Uncommon</span></td><td><button class="btn btn-sm btn-danger">Remove</button></td></tr>
+      <tr><td>Battle Pass Premium</td><td>battlepass</td><td>950</td><td>Premium</td><td><span class="badge orange">Legendary</span></td><td><button class="btn btn-sm btn-danger">Remove</button></td></tr>
+      <tr><td>2000 Credits Pack</td><td>currency</td><td>349</td><td>Premium</td><td><span class="badge cyan">Uncommon</span></td><td><button class="btn btn-sm btn-danger">Remove</button></td></tr>
+    </table>
+  `;
+}
+
+// ─── REPORTS ────────────────────────────────────────────────────
+async function renderReports(el) {
+  el.innerHTML = `
+    <h1 style="margin-bottom:16px;">🚨 Player Reports</h1>
+    <div class="stat-grid">
+      <div class="stat-card alert"><div class="label">Pending</div><div class="value">3</div></div>
+      <div class="stat-card"><div class="label">Resolved Today</div><div class="value">7</div></div>
+      <div class="stat-card"><div class="label">Total</div><div class="value">24</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Pending Reports</h2></div>
+      <table>
+        <tr><th>Reporter</th><th>Target</th><th>Reason</th><th>Date</th><th>Actions</th></tr>
+        <tr><td>Player_A</td><td><strong>Player_X</strong></td><td>Speed hacking</td><td>${new Date().toLocaleDateString()}</td><td><button class="btn btn-sm btn-primary" onclick="showToast('Banned Player_X')">Ban</button> <button class="btn btn-sm btn-cyan" onclick="showToast('Dismissed')">Dismiss</button></td></tr>
+        <tr><td>Player_B</td><td><strong>Player_Y</strong></td><td>Team killing</td><td>${new Date().toLocaleDateString()}</td><td><button class="btn btn-sm btn-primary" onclick="showToast('Banned Player_Y')">Ban</button> <button class="btn btn-sm btn-cyan" onclick="showToast('Dismissed')">Dismiss</button></td></tr>
+        <tr><td>Player_C</td><td><strong>Player_Z</strong></td><td>Exploiting</td><td>${new Date().toLocaleDateString()}</td><td><button class="btn btn-sm btn-primary" onclick="showToast('Banned Player_Z')">Ban</button> <button class="btn btn-sm btn-cyan" onclick="showToast('Dismissed')">Dismiss</button></td></tr>
+      </table>
+    </div>
+  `;
+}
+
+// ─── SETTINGS ───────────────────────────────────────────────────
+function renderSettings(el) {
+  el.innerHTML = `
+    <h1 style="margin-bottom:16px;">⚙️ Settings</h1>
+    <div class="card">
+      <div class="card-header"><h2>API Configuration</h2></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>API URL</label><input value="${API_URL}"></div>
+        <div class="form-group"><label>Discord Guild ID</label><input placeholder="Enter Discord guild ID"></div>
+        <div class="form-group"><label>Admin Role ID</label><input placeholder="Enter admin role ID"></div>
+        <div class="form-group"><label>Log Channel ID</label><input placeholder="Enter log channel ID"></div>
+        <div class="form-group"><label>Max Players Per Match</label><input type="number" value="60"></div>
+        <div class="form-group"><label>Anti-Cheat</label><select><option>Enabled</option><option>Disabled</option></select></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:12px;" onclick="showToast('Settings saved')">Save Settings</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Danger Zone</h2></div>
+      <p style="color:var(--text3);font-size:13px;margin-bottom:12px;">Actions here are irreversible.</p>
+      <button class="btn btn-danger" onclick="showToast('This would wipe all data in production')">Reset All Data</button>
+    </div>
+  `;
+}
+
+// ─── Ban Modal ──────────────────────────────────────────────────
+window.showBanModal = (username) => {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2 style="margin-bottom:16px;">🚫 Ban Player</h2>
+      <div class="form-group"><label>Player</label><input value="${username}" readonly></div>
+      <div class="form-group"><label>Reason</label><textarea rows="3" placeholder="Enter ban reason..."></textarea></div>
+      <div class="form-group"><label>Duration</label><select><option>Permanent</option><option>7 Days</option><option>30 Days</option><option>24 Hours</option></select></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+        <button class="btn btn-sm" style="background:var(--bg3);" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+        <button class="btn btn-sm btn-danger" onclick="showToast('${username} has been banned');this.closest('.modal-overlay').remove()">Ban Player</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+};
+
+// ─── Init ───────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>

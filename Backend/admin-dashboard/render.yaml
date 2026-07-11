@@ -1,0 +1,20 @@
+# Arena Fall — Admin Dashboard
+# Deploy as a static site on Render
+
+name: arenafall-admin
+env: static
+region: oregon
+plan: free
+branch: main
+rootDir: Backend/admin-dashboard
+buildCommand: echo "Static site — no build needed"
+staticPublishPath: .
+routes:
+  - type: rewrite
+    source: /*
+    destination: /index.html
+envVars:
+  - key: VITE_API_URL
+    value: https://arenafall-api.onrender.com/api/v1
+  - key: VITE_DISCORD_INVITE
+    value: https://discord.gg/arenafall

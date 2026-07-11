@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!129 &1
+PlayerSettings:
+  productName: Arena Fall
+  companyName: Arena Games
+  version: 1.0.0
+  bundleIdentifier: com.arenagames.arenafall
+  bundleVersion: 1.0
+  iPhoneBundleIdentifier: com.arenagames.arenafall
+  AndroidBundleIdentifier: com.arenagames.arenafall
+  defaultScreenWidth: 1920
+  defaultScreenHeight: 1080
+  fullscreenMode: 0
+  runInBackground: 1
+  captureSingleScreen: 0
+  resizableWindow: 1
+  useMacAppStoreValidation: 0
+  graphicsJobs: 1
+  activeColorSpace: 1
+  m_ActiveRenderPipeline: {fileID: 1511355684466684272, guid: 4b0f9f4e8a5f14a4d8f8e5a7b3c2d1a0, type: 2}
+  m_SplashScreenScale: 1
+  m_SplashScreenBackgroundColor: {r: 0.039, g: 0.086, b: 0.157, a: 1}
+  m_SplashScreenLogos: []
+  m_SplashScreenOverlayOpacity: 1
+  m_SplashScreenAnimation: 1
+  m_SplashScreenLogoStyle: 1
+  m_SplashScreenDrawMode: 0
+  m_SplashScreenBackgroundAnimationZoom: 1
+  m_SplashScreenLogoAnimationZoom: 1
+  m_SplashScreenShowUnityLogo: 0
+  m_SplashScreenShow: 1
+  m_SplashScreen: {fileID: 0}
+  m_EnableMacAppStore: 0
+  m_EnableLSResolution: 1
+  m_RequireLSResolution: 0
+  androidShowActivityIndicatorOnLoading: 0
+  iosShowActivityIndicatorOnLoading: 0
+  useCustomLaunchScreen: 0
+  applicationIdentifier: {}
+  buildNumber: {}
+  AndroidProfiler: 0
+  allowUnsafeCode: 0
+  gcIncremental: 1
+  gcWBarrierValidation: 0
+  m_ScriptingBackend: {fileID: 0}
+  m_ScriptingRuntimeVersion: 1
+  m_ApiCompatibilityLevel: 6
+  m_EnableInternalProfiler: 0
+  clcProjectIdentifier: 0
+  clcProjectName: ArenaFall
+  appleDeveloperTeamID: ""
+  iOSBuildNumber: 0
+  AndroidSdkRoot: ""
+  AndroidNdkRoot: ""
+  AndroidJdkRoot: ""
+  targetDevice: 0
+  statusBarHidden: 0
+  targetResolution: 0
+  m_RenderingPath: 1
+  m_MobileRenderingPath: 1
+  m_MobileRenderType: 0
+  m_ActiveRenderPipelineAsset: {fileID: 1511355684466684272, guid: 4b0f9f4e8a5f14a4d8f8e5a7b3c2d1a0, type: 2}

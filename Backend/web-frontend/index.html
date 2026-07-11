@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arena Fall — Player Portal</title>
+<style>
+  :root {
+    --bg: #0A1628; --bg2: #1E3A5F; --bg3: #2A4A7F;
+    --primary: #FF6B35; --cyan: #00D4FF; --green: #44FF55;
+    --text: #FFFFFF; --text2: #B0B8C4; --text3: #607080;
+    --radius: 8px; --shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  
+  .header { background: var(--bg2); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100; }
+  .header .logo { font-size: 22px; font-weight: bold; color: var(--primary); }
+  .header .nav a { color: var(--text2); text-decoration: none; margin-left: 20px; font-size: 14px; }
+  .header .nav a:hover { color: var(--cyan); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .hero { text-align: center; padding: 60px 20px; }
+  .hero h1 { font-size: 48px; color: var(--primary); margin-bottom: 12px; }
+  .hero p { font-size: 18px; color: var(--text2); max-width: 500px; margin: 0 auto 24px; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin: 24px 0; }
+  .stat-card { background: var(--bg2); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow); text-align: center; }
+  .stat-card .value { font-size: 36px; font-weight: bold; margin: 8px 0; }
+  .stat-card .label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 2px; }
+
+  .card { background: var(--bg2); border-radius: var(--radius); padding: 24px; margin: 16px 0; box-shadow: var(--shadow); }
+  .card h2 { font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; padding: 12px; color: var(--text3); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--bg3); }
+  td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+
+  .search-box { display: flex; gap: 8px; max-width: 500px; margin: 24px auto; }
+  .search-box input { flex: 1; background: var(--bg2); border: 1px solid var(--bg3); color: var(--text); padding: 12px 16px; border-radius: var(--radius); font-size: 16px; }
+  .search-box input:focus { outline: none; border-color: var(--cyan); }
+  .search-box button { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: var(--radius); cursor: pointer; font-size: 16px; font-weight: bold; }
+  .search-box button:hover { background: #FF8555; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge.orange { background: rgba(255,107,53,0.15); color: var(--primary); }
+  .badge.cyan { background: rgba(0,212,255,0.15); color: var(--cyan); }
+  .badge.green { background: rgba(68,255,85,0.15); color: var(--green); }
+  .badge.gray { background: rgba(96,112,128,0.2); color: var(--text2); }
+
+  .medal { font-size: 18px; }
+  .result { display: none; }
+  .result.show { display: block; }
+
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 24px 0; }
+  .feature { background: var(--bg2); padding: 20px; border-radius: var(--radius); text-align: center; box-shadow: var(--shadow); }
+  .feature .icon { font-size: 36px; margin-bottom: 8px; }
+  .feature .title { font-weight: bold; margin-bottom: 4px; }
+
+  footer { text-align: center; padding: 24px; color: var(--text3); font-size: 13px; border-top: 1px solid var(--bg3); margin-top: 48px; }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="logo">🎮 ARENA FALL</div>
+  <nav class="nav">
+    <a href="#" onclick="showPage('home')">Home</a>
+    <a href="#" onclick="showPage('leaderboard')">Leaderboard</a>
+    <a href="#" onclick="showPage('tournaments')">Tournaments</a>
+    <a href="#" onclick="showPage('seasons')">Seasons</a>
+    <a href="#" onclick="showPage('replays')">Replays</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div id="page-content"></div>
+</div>
+
+<footer>© 2024 Arena Games. All rights reserved. | <a href="#" style="color:var(--text3);">Privacy</a> | <a href="#" style="color:var(--text3);">Terms</a></footer>
+
+<script>
+const API = 'https://arenafall-api.onrender.com/api/v1';
+const DISCORD = 'https://discord.gg/arenafall';
+
+async function api(path) {
+  try {
+    const res = await fetch(`${API}${path}`);
+    return await res.json();
+  } catch { return null; }
+}
+
+function showPage(page) {
+  const el = document.getElementById('page-content');
+  if (!el) return;
+  if (page === 'home') renderHome(el);
+  else if (page === 'leaderboard') renderLeaderboard(el);
+  else if (page === 'tournaments') renderTournaments(el);
+  else if (page === 'seasons') renderSeasons(el);
+  else if (page === 'replays') renderReplays(el);
+}
+
+// ─── HOME ───────────────────────────────────────────────────────
+function renderHome(el) {
+  el.innerHTML = `
+    <div class="hero">
+      <h1>🏆 ARENA FALL</h1>
+      <p>Survive the fall. Battle 60 players across a massive sci-fi arena. Last one standing wins.</p>
+      <div class="search-box">
+        <input id="search-input" placeholder="Search player..." onkeyup="if(event.key==='Enter')searchPlayer()">
+        <button onclick="searchPlayer()">Search</button>
+      </div>
+      <div id="search-result" class="result"></div>
+    </div>
+    <div class="stats" id="home-stats">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="value">—</div><div class="label">Registered Players</div></div>
+        <div class="stat-card"><div class="value">—</div><div class="label">Matches Played</div></div>
+        <div class="stat-card"><div class="value">—</div><div class="label">Active Tournaments</div></div>
+        <div class="stat-card"><div class="value">—</div><div class="label">Season</div></div>
+      </div>
+    </div>
+    <div class="features">
+      <div class="feature"><div class="icon">👥</div><div class="title">Player Profiles</div><div style="font-size:13px;color:var(--text3)">Track your stats and match history</div></div>
+      <div class="feature"><div class="icon">📊</div><div class="title">Leaderboards</div><div style="font-size:13px;color:var(--text3)">Compete for top rankings</div></div>
+      <div class="feature"><div class="icon">🏆</div><div class="title">Tournaments</div><div style="font-size:13px;color:var(--text3)">Weekly competitions with rewards</div></div>
+      <div class="feature"><div class="icon">📅</div><div class="title">Battle Pass</div><div style="font-size:13px;color:var(--text3)">Seasonal progression and rewards</div></div>
+    </div>
+  `;
+  
+  api('/leaderboard?category=wins&limit=1').then(d => {
+    if (d) document.querySelector('.stat-card:nth-child(1) .value').textContent = d.total?.toLocaleString() || 'N/A';
+  });
+  api('/matches/recent/1').then(d => {
+    if (d) document.querySelector('.stat-card:nth-child(2) .value').textContent = 'Active';
+  });
+  api('/tournaments').then(d => {
+    if (d) document.querySelector('.stat-card:nth-child(3) .value').textContent = d.active?.length || 0;
+  });
+  api('/seasons').then(d => {
+    const s = d?.seasons?.find(s => s.isCurrent);
+    document.querySelector('.stat-card:nth-child(4) .value').textContent = s?.name || 'None';
+  });
+
+  window.searchPlayer = async () => {
+    const q = document.getElementById('search-input').value.trim();
+    if (!q) return;
+    const results = await api(`/players/search?q=${encodeURIComponent(q)}`);
+    const el = document.getElementById('search-result');
+    if (!results?.results?.length) {
+      el.innerHTML = `<p style="color:var(--red);padding:12px;">No players found matching "${q}"</p>`;
+    } else {
+      el.innerHTML = results.results.map(p => `
+        <div style="background:var(--bg2);padding:12px 16px;border-radius:8px;margin:4px 0;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <strong>${p.displayName || p.username}</strong>
+            <span style="color:var(--text3);margin-left:8px;">⭐ Lvl ${p.level}</span>
+            <span class="badge cyan" style="margin-left:8px;">${p.title || 'Recruit'}</span>
+          </div>
+          <a href="profile.html?id=${p.playerId}" style="color:var(--cyan);text-decoration:none;font-size:13px;">View →</a>
+        </div>
+      `).join('');
+    }
+    el.classList.add('show');
+  };
+}
+
+// ─── LEADERBOARD ────────────────────────────────────────────────
+async function renderLeaderboard(el) {
+  el.innerHTML = `
+    <h1 style="margin:24px 0;">📊 Leaderboard</h1>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <button class="badge orange" style="padding:8px 16px;cursor:pointer;border:none;font-size:13px;" onclick="loadLB('wins',this)">🏆 Wins</button>
+      <button class="badge cyan" style="padding:8px 16px;cursor:pointer;border:none;font-size:13px;" onclick="loadLB('kills',this)">💀 Kills</button>
+      <button class="badge cyan" style="padding:8px 16px;cursor:pointer;border:none;font-size:13px;" onclick="loadLB('damage',this)">💥 Damage</button>
+      <button class="badge cyan" style="padding:8px 16px;cursor:pointer;border:none;font-size:13px;" onclick="loadLB('kdr',this)">📊 K/D</button>
+      <button class="badge cyan" style="padding:8px 16px;cursor:pointer;border:none;font-size:13px;" onclick="loadLB('level',this)">⭐ Level</button>
+    </div>
+    <div class="card" id="lb-card">
+      <h2>🏆 Wins Leaderboard</h2>
+      <div id="lb-content">Loading...</div>
+    </div>
+  `;
+  
+  window.loadLB = async (cat, btn) => {
+    document.querySelectorAll('[onclick^="loadLB"]').forEach(b => b.className = 'badge cyan');
+    btn.className = 'badge orange';
+    document.querySelector('#lb-card h2').innerHTML = `${btn.textContent} Leaderboard`;
+    
+    const lb = await api(`/leaderboard?category=${cat}&limit=25`);
+    if (!lb?.results) return;
+    
+    const medals = ['🥇', '🥈', '🥉'];
+    document.getElementById('lb-content').innerHTML = `
+      <table>
+        <tr><th>Rank</th><th>Player</th><th>Value</th><th>Details</th></tr>
+        ${lb.results.map((p, i) => `
+          <tr>
+            <td style="font-size:18px;">${medals[i] || `#${p.rank || i + 1}`}</td>
+            <td><strong>${p.displayName || p.username}</strong> ⭐${p.level || 1}</td>
+            <td style="font-size:20px;font-weight:bold;color:var(--primary);">${p.value || 0}</td>
+            <td style="color:var(--text3);font-size:12px;">
+              ${cat === 'kills' ? `${p.deaths || 0} deaths` : ''}
+              ${cat === 'kdr' ? `${p.kdr || 0} ratio` : ''}
+              ${cat === 'wins' ? `${p.matchesPlayed || 0} matches` : ''}
+            </td>
+          </tr>
+        `).join('')}
+      </table>
+    `;
+  };
+  
+  // Load default
+  loadLB('wins', document.querySelector('[onclick^="loadLB"]'));
+}
+
+// ─── TOURNAMENTS ────────────────────────────────────────────────
+async function renderTournaments(el) {
+  el.innerHTML = `<h1 style="margin:24px 0;">🏆 Tournaments</h1><div id="t-content">Loading...</div>`;
+  const t = await api('/tournaments');
+  if (!t) return;
+
+  const renderSection = (title, list, empty) => list?.length
+    ? `<div class="card"><h2>${title}</h2>${list.map(tn => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg);border-radius:6px;margin:4px 0;">
+        <div><strong>${tn.name}</strong> <span class="badge cyan">${tn.mode}</span></div>
+        <div style="color:var(--text3);font-size:13px;">${tn.players || tn.registered?.length || 0}/${tn.maxPlayers} players</div>
+        <div style="font-size:12px;color:var(--text2);">${tn.startDate ? new Date(tn.startDate).toLocaleDateString() : ''}</div>
+        <div><span class="badge ${tn.status === 'live' ? 'green' : 'orange'}">${tn.status}</span></div>
+      </div>
+    `).join('')}</div>`
+    : `<div class="card"><h2>${title}</h2><p style="color:var(--text3);">${empty || 'None'}</p></div>`;
+
+  document.getElementById('t-content').innerHTML = 
+    renderSection('🔴 Live Now', t.active, 'No active tournaments') +
+    renderSection('📅 Upcoming', t.upcoming, 'No upcoming tournaments') +
+    renderSection('✅ Completed', t.completed?.slice(0, 5), 'No completed tournaments');
+}
+
+// ─── SEASONS ────────────────────────────────────────────────────
+async function renderSeasons(el) {
+  el.innerHTML = `<h1 style="margin:24px 0;">📅 Seasons & Battle Pass</h1><div id="s-content">Loading...</div>`;
+  const seasons = await api('/seasons');
+  if (!seasons?.seasons) return;
+
+  document.getElementById('s-content').innerHTML = seasons.seasons.map(s => `
+    <div class="card" style="${s.isCurrent ? 'border-left:3px solid var(--primary);' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h2>${s.name}</h2>
+        <span class="badge ${s.isCurrent ? 'green' : 'gray'}">${s.isCurrent ? '🟢 Active' : 'Ended'}</span>
+      </div>
+      <p style="color:var(--text3);margin-bottom:8px;">${s.theme} · ${s.battlePassTiers} tiers · ${s.premiumCost} premium</p>
+      <p style="color:var(--text2);font-size:13px;">
+        ${new Date(s.startDate).toLocaleDateString()} — ${new Date(s.endDate).toLocaleDateString()}
+      </p>
+      ${s.weapons?.length ? `<p style="margin-top:8px;font-size:13px;">🔫 New weapons: ${s.weapons.map(w => w.name).join(', ')}</p>` : ''}
+    </div>
+  `).join('');
+}
+
+// ─── REPLAYS ────────────────────────────────────────────────────
+async function renderReplays(el) {
+  el.innerHTML = `<h1 style="margin:24px 0;">🎥 Match Replays</h1><div id="r-content">Loading...</div>`;
+  const replays = await api('/replays');
+  if (!replays?.replays?.length) {
+    document.getElementById('r-content').innerHTML = `
+      <div class="card">
+        <p style="color:var(--text3);text-align:center;padding:40px;">No replays available yet. Play a match to generate one!</p>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('r-content').innerHTML = `<div class="card">
+    <table>
+      <tr><th>Match</th><th>Mode</th><th>Actions</th><th>Size</th><th>Recorded</th><th></th></tr>
+      ${replays.replays.slice(0, 20).map(r => `
+        <tr>
+          <td><code>${(r.matchId || '').slice(0, 20)}...</code></td>
+          <td><span class="badge cyan">${r.metadata?.mode || 'solo'}</span></td>
+          <td>${r.actionCount?.toLocaleString() || 0}</td>
+          <td>${r.sizeKB || 0} KB</td>
+          <td>${r.recordedAt ? new Date(r.recordedAt).toLocaleDateString() : ''}</td>
+          <td><a href="#" style="color:var(--cyan);text-decoration:none;" onclick="showToast('Replay viewer coming soon')">Watch →</a></td>
+        </tr>
+      `).join('')}
+    </table>
+  </div>`;
+}
+
+// ─── Toast ──────────────────────────────────────────────────────
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:8px;background:var(--bg2);box-shadow:var(--shadow);z-index:9999;transform:translateY(120%);transition:transform 0.3s;border-left:3px solid var(--cyan);color:var(--text);';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.transform = 'translateY(0)';
+  setTimeout(() => t.style.transform = 'translateY(120%)', 3000);
+}
+
+// ─── Init ───────────────────────────────────────────────────────
+showPage('home');
+</script>
+</body>
+</html>

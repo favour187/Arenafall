@@ -1,0 +1,28 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Security: run as non-root user
+RUN addgroup -S arenafall && adduser -S arenafall -G arenafall
+
+# Install dependencies first (better caching)
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy source
+COPY src/ ./src/
+COPY .env.example ./.env
+
+# Security hardening
+RUN chown -R arenafall:arenafall /app && \
+    chmod -R 750 /app && \
+    chmod 640 /app/.env
+
+USER arenafall
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+CMD ["node", "src/server.js"]

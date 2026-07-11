@@ -1,0 +1,50 @@
+# Arena Fall Backend — Render Blueprint Deployment
+# Uses native Node.js (not Docker) — simpler and faster
+
+services:
+  # ─── Web Service: Game API ──────────────────────────────────
+  - type: web
+    name: arenafall-api
+    env: node
+    region: oregon
+    plan: starter
+    branch: main
+    rootDir: Backend
+    healthCheckPath: /health
+    buildCommand: npm install
+    startCommand: node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY
+        value: 24h
+      - key: JWT_REFRESH_EXPIRY
+        value: 7d
+      - key: RATE_LIMIT_MAX
+        value: 100
+      - key: ANTICHEAT_ENABLED
+        value: true
+      - key: MAX_PLAYERS_PER_MATCH
+        value: 60
+      - key: MONGODB_URI
+        fromService:
+          type: mongodb
+          name: arenafall-mongodb
+          property: connectionString
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: ENCRYPTION_IV
+        generateValue: true
+      - key: LOG_LEVEL
+        value: info
+
+  # ─── MongoDB (Render Native) ────────────────────────────────
+  - type: mongodb
+    name: arenafall-mongodb
+    plan: free
