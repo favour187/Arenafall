@@ -61,6 +61,16 @@
   .feature .title { font-weight: bold; margin-bottom: 4px; }
 
   footer { text-align: center; padding: 24px; color: var(--text3); font-size: 13px; border-top: 1px solid var(--bg3); margin-top: 48px; }
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+  .modal { background: var(--bg2); border-radius: var(--radius); padding: 28px; width: 92%; max-width: 650px; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow); border: 1px solid rgba(255,255,255,0.08); color: var(--text); }
+  @media (max-width: 768px) {
+    .header { flex-direction: column; gap: 14px; padding: 16px; }
+    .header .nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-left: 0; }
+    .header .nav a { margin-left: 0; font-size: 13px; }
+    .hero { padding: 40px 16px; }
+    .hero h1 { font-size: 34px; }
+    .stat-grid { grid-template-columns: 1fr; gap: 12px; }
+  }
 </style>
 </head>
 <body>
@@ -79,7 +89,7 @@
   <div id="page-content"></div>
 </div>
 
-<footer>© 2024 Arena Games. All rights reserved. | <a href="#" style="color:var(--text3);">Privacy</a> | <a href="#" style="color:var(--text3);">Terms</a></footer>
+<footer>© 2026 Arena Fall Games. All rights reserved. • <a href="#" style="color:var(--cyan);text-decoration:none;" onclick="showPrivacyModal()">Privacy Policy</a> • <a href="#" style="color:var(--cyan);text-decoration:none;" onclick="showTermsModal()">Terms of Service</a></footer>
 
 <script>
 const API = (window.location.hostname === 'localhost' && window.location.port === '3000') ? 'http://localhost:3000/api/v1' : 'https://arenafall-api.onrender.com/api/v1';
@@ -302,6 +312,44 @@ function showToast(msg) {
   t.style.transform = 'translateY(0)';
   setTimeout(() => t.style.transform = 'translateY(120%)', 3000);
 }
+
+// ─── Terms & Privacy Policy Modals ─────────────────────────────
+window.showTermsModal = () => {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2 style="margin-bottom:16px;color:var(--primary);">📜 Arena Fall Terms of Service</h2>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px;">
+        <p style="margin-bottom:10px;"><strong>1. Acceptance of Terms:</strong> By downloading, installing, or accessing Arena Fall (the "Game") or our web portals, you agree to be bound by these authoritative Terms of Service.</p>
+        <p style="margin-bottom:10px;"><strong>2. Fair Play & Anti-Cheat:</strong> You strictly agree not to use unauthorized third-party tools, speedhacks, aimbots, or network manipulation software. Our authoritative server core (<strong>AntiCheatService.js</strong> and <strong>BackendSupervisionService.js</strong>) monitors gameplay deltas at 30Hz. Violations automatically result in 24-hour shadow bans or permanent account termination.</p>
+        <p style="margin-bottom:10px;"><strong>3. Virtual Assets & Battle Pass:</strong> All virtual currency (Credits, Premium Currency), character skins (<strong>Cyber Commando</strong>), and compound weapons (<strong>PC-90 Plasma Cannon</strong>) remain the exclusive intellectual property of Arena Fall Games. Virtual items have no real-world cash value.</p>
+        <p><strong>4. Server Uptime & Maintenance:</strong> We strive for 99.9% authoritative match uptime (<strong>7 Compound POIs</strong>). However, online match sessions may be periodically dissolved for scheduled maintenance or automatic zombie session clearing.</p>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:12px;border:none;border-radius:8px;background:var(--primary);color:white;font-weight:bold;cursor:pointer;" onclick="this.closest('.modal-overlay').remove()">I Understand & Agree</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+};
+
+window.showPrivacyModal = () => {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2 style="margin-bottom:16px;color:var(--cyan);">🔒 Arena Fall Privacy Policy</h2>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px;">
+        <p style="margin-bottom:10px;"><strong>1. Telemetry & Data Collection:</strong> To provide competitive Battle Royale matchmaking (<strong>MatchmakingService.js</strong>) and ensure anti-cheat integrity, our servers collect real-time movement velocity, match placement, kill feeds, and IP addresses during gameplay.</p>
+        <p style="margin-bottom:10px;"><strong>2. Account Storage:</strong> User account credentials (<strong>email</strong>, <strong>username</strong>, bcrypt <strong>passwordHash</strong>) are securely processed using industry-standard encryption (<strong>ENCRYPTION_KEY</strong>) or in-memory session pools when operating in authoritative fallback mode.</p>
+        <p><strong>3. Data Sharing:</strong> Arena Fall Games never sells, trades, or rents player telemetry or personal profile data to third-party advertisers.</p>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:12px;border:none;border-radius:8px;background:var(--cyan);color:var(--bg);font-weight:bold;cursor:pointer;" onclick="this.closest('.modal-overlay').remove()">Close Privacy Policy</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+};
 
 // ─── Init ───────────────────────────────────────────────────────
 showPage('home');

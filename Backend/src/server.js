@@ -120,7 +120,7 @@ app.use('/admin', express.static(path.join(__dirname, '../admin-dashboard')));
 app.use('/', express.static(path.join(__dirname, '../web-frontend')));
 
 // ─── Health Check ──────────────────────────────────────────────
-app.get('/health', (req, res) => {
+const healthHandler = (req, res) => {
   res.json({
     status: 'online',
     version: config.apiVersion,
@@ -132,7 +132,9 @@ app.get('/health', (req, res) => {
     },
     game: 'Arena Fall Battle Royale'
   });
-});
+};
+app.get('/health', healthHandler);
+app.get(`/api/${config.apiVersion}/health`, healthHandler);
 
 // ─── Import Routes ─────────────────────────────────────────────
 const authRoutes = require('./routes/auth');

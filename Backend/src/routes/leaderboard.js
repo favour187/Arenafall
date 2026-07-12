@@ -19,6 +19,25 @@ router.get('/', optionalAuth, async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit) || 100, 500);
     const offset = parseInt(req.query.offset) || 0;
 
+    if (require('mongoose').connection.readyState !== 1) {
+      const playersList = Array.from(global.memoryStore?.players?.values() || []);
+      return res.json({
+        category,
+        limit,
+        offset,
+        total: playersList.length,
+        results: playersList.map((p, i) => ({
+          rank: i + 1,
+          playerId: p.playerId,
+          username: p.username,
+          displayName: p.displayName || p.username,
+          level: p.level || 1,
+          value: p.stats?.wins || 0,
+          subValue: p.stats?.kills || 0
+        }))
+      });
+    }
+
     // Try cache first
     if (redisClient?.status === 'ready') {
       const cacheKey = `${LEADERBOARD_CACHE_KEY}:${category}:${limit}:${offset}`;

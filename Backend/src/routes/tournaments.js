@@ -3,45 +3,9 @@ const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
-// ─── In-memory tournament store (in production: MongoDB) ────────
-let tournaments = [];
+// ─── In-memory tournament store ────────────────────────────────
+let tournaments = global.memoryStore?.tournaments || [];
 let autoId = 1;
-
-const TOURNAMENT_POOL = [
-  { name: 'Neon Wars', mode: 'solo', maxPlayers: 64, reward: 'Neon Warrior Skin', entryFee: 0 },
-  { name: 'Duo Showdown', mode: 'duos', maxPlayers: 40, reward: 'Duo Champions Title', entryFee: 100 },
-  { name: 'Squad Assault', mode: 'squads', maxPlayers: 48, reward: 'Squad Elite Banner', entryFee: 200 },
-  { name: 'Midnight Mayhem', mode: 'solo', maxPlayers: 100, reward: 'Midnight Operator Skin', entryFee: 50 },
-  { name: 'Weekend Warriors', mode: 'solo', maxPlayers: 80, reward: 'Warrior Emote Pack', entryFee: 0 },
-  { name: 'Pro League', mode: 'squads', maxPlayers: 32, reward: 'Pro League Trophy + 1000 Credits', entryFee: 500 },
-];
-
-// ─── Seed default tournaments ───────────────────────────────────
-function seedTournaments() {
-  if (tournaments.length > 0) return;
-  
-  const now = Date.now();
-  TOURNAMENT_POOL.forEach((t, i) => {
-    const futureDate = new Date(now + (i + 1) * 7 * 24 * 60 * 60 * 1000);
-    tournaments.push({
-      id: `tournament_${autoId++}`,
-      ...t,
-      startDate: futureDate,
-      status: i === 0 ? 'live' : 'upcoming',
-      players: 0,
-      registered: [],
-      bracket: null,
-      winner: null,
-      createdAt: new Date(),
-      prizePool: t.entryFee > 0 ? t.entryFee * t.maxPlayers : 0
-    });
-  });
-
-  console.log(`🏆 Seeded ${tournaments.length} tournaments`);
-}
-
-// Initialize
-seedTournaments();
 
 // ─── GET /tournaments ───────────────────────────────────────────
 router.get('/', (req, res) => {

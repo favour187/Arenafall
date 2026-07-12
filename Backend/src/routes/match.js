@@ -151,8 +151,11 @@ router.get('/history', authenticate, async (req, res) => {
 });
 
 // ─── GET /recent/:count ─────────────────────────────────────────
-router.get('/recent/:count?', authenticate, async (req, res) => {
+router.get('/recent/:count?', async (req, res) => {
   try {
+    if (require('mongoose').connection.readyState !== 1) {
+      return res.json({ matches: global.memoryStore?.matches || [] });
+    }
     const count = Math.min(parseInt(req.params.count) || 10, 50);
     const matches = await Match.find({ status: 'finished' })
       .sort({ endedAt: -1 })

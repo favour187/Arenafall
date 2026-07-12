@@ -93,10 +93,13 @@
   .tab.active { background: var(--primary); color: white; }
 
   @media (max-width: 768px) {
-    .sidebar { width: 60px; padding: 10px; }
-    .sidebar .nav-text, .sidebar .logo-text { display: none; }
-    .main { margin-left: 60px; padding: 16px; }
-    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .app { flex-direction: column; }
+    .sidebar { position: relative; width: 100%; height: auto; padding: 16px; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar .nav-text, .sidebar .logo-text { display: inline; }
+    .sidebar .nav-item { flex: 1 1 auto; justify-content: center; padding: 8px 12px; font-size: 13px; }
+    .sidebar-footer { width: 100%; text-align: center; margin-top: 12px; padding-top: 12px; }
+    .main { margin-left: 0; padding: 16px; width: 100%; max-width: 100%; }
+    .stat-grid { grid-template-columns: 1fr; gap: 12px; }
   }
 </style>
 </head>
@@ -118,11 +121,23 @@ function getPage() { return state.page; }
 // ─── API Calls ──────────────────────────────────────────────────
 async function apiGet(endpoint) {
   try {
-    const res = await fetch(`${API_URL}${endpoint}`, {
+    let res = await fetch(`${API_URL}${endpoint}`, {
       headers: state.token ? { Authorization: `Bearer ${state.token}` } : {}
     });
+    if (!res.ok && endpoint === '/health' && window.location.origin && window.location.origin.startsWith('http')) {
+      res = await fetch(`${window.location.origin}/health`);
+    }
+    if (!res.ok) return { error: `HTTP ${res.status}` };
     return await res.json();
-  } catch (err) { return { error: err.message }; }
+  } catch (err) {
+    if (endpoint === '/health' && window.location.origin && window.location.origin.startsWith('http')) {
+      try {
+        const res2 = await fetch(`${window.location.origin}/health`);
+        return await res2.json();
+      } catch (e2) {}
+    }
+    return { error: err.message };
+  }
 }
 
 async function apiPost(endpoint, body) {
@@ -150,6 +165,42 @@ function showToast(msg, type = 'success') {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+// ─── Terms & Privacy Modals ─────────────────────────────────────
+window.showTermsModal = () => {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2 style="margin-bottom:16px;color:var(--primary);">📜 Arena Fall Terms of Service</h2>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px;">
+        <p style="margin-bottom:10px;"><strong>1. Authoritative Core:</strong> By accessing the Admin Dashboard, you agree to strictly follow Arena Fall community management guidelines and anti-cheat protocol standards.</p>
+        <p style="margin-bottom:10px;"><strong>2. Sanction Policy:</strong> Automated 24-hour shadow bans (<strong>status: 'banned'</strong>) and permanent sanctions must be issued strictly based on verified 30Hz movement/combat telemetry anomalies or proven terms violations.</p>
+        <p><strong>3. Confidentiality:</strong> Player IP addresses (<strong>lastIp</strong>) and account identifiers must remain strictly confidential.</p>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="this.closest('.modal-overlay').remove()">I Understand & Agree</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+};
+
+window.showPrivacyModal = () => {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2 style="margin-bottom:16px;color:var(--cyan);">🔒 Arena Fall Privacy & Security Policy</h2>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px;">
+        <p style="margin-bottom:10px;"><strong>1. Telemetry Processing:</strong> The admin dashboard processes real-time server tickrate (<strong>30.0 Hz</strong>), memory consumption (<strong>memoryMB</strong>), and spatial grid matchmaking metrics to supervise server stability.</p>
+        <p><strong>2. Data Core Protection:</strong> All admin actions (<strong>clear_zombies</strong>, <strong>reset_metrics</strong>, <strong>unban_player</strong>) are authenticated via secure JWT tokens (<strong>authenticate / adminOnly</strong>).</p>
+      </div>
+      <button class="btn btn-cyan" style="width:100%;justify-content:center;" onclick="this.closest('.modal-overlay').remove()">Close Policy</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+};
+
 // ════════════════════════════════════════════════════════════════
 //  RENDER ENGINE
 // ════════════════════════════════════════════════════════════════
@@ -171,6 +222,9 @@ function render() {
       </nav>
       <main class="main">
         <div id="page-content"></div>
+        <footer style="margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;font-size:12px;color:var(--text3);">
+          © 2026 Arena Fall Pro Admin Core • <a href="#" style="color:var(--cyan);text-decoration:none;" onclick="showPrivacyModal()">Privacy Policy</a> • <a href="#" style="color:var(--cyan);text-decoration:none;" onclick="showTermsModal()">Terms of Service</a>
+        </footer>
       </main>
     </div>
   `;
@@ -243,22 +297,24 @@ async function renderOverview(el) {
 
   // Fetch data
   const health = await apiGet('/health');
-  const leaderboard = await apiGet('/leaderboard?category=wins&limit=1');
+  const leaderboard = await apiGet('/leaderboard?category=wins&limit=10');
   const tournaments = await apiGet('/tournaments');
+  const supervision = await apiGet('/supervision/status');
 
-  document.getElementById('stat-players').textContent = leaderboard?.total?.toLocaleString() || 'N/A';
-  document.getElementById('stat-tournaments').textContent = tournaments?.active?.length || 0;
-  document.getElementById('stat-reports').textContent = Math.floor(Math.random() * 5) + 1;
+  document.getElementById('stat-players').textContent = leaderboard?.total?.toLocaleString() || '0';
+  const allTourneys = (tournaments && !tournaments.error) ? [...(tournaments.active||[]), ...(tournaments.upcoming||[])] : [];
+  document.getElementById('stat-tournaments').textContent = allTourneys.filter(x => x.status === 'live').length;
+  document.getElementById('stat-reports').textContent = (supervision && supervision.data && supervision.data.activeInfractions) ? supervision.data.activeInfractions.length : '0';
 
   const statusEl = document.getElementById('server-status');
-  if (health?.status === 'online') {
+  if (health?.status === 'online' || health?.game || (health && !health.error)) {
     statusEl.innerHTML = `
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px;">
-        <div><span class="badge green">● ONLINE</span> API Server</div>
-        <div><span class="badge ${health.services?.database === 'connected' ? 'green' : 'red'}">● ${health.services?.database || 'disconnected'}</span> MongoDB</div>
-        <div><span class="badge ${health.services?.redis === 'connected' ? 'green' : 'gray'}">● ${health.services?.redis || 'not connected'}</span> Redis</div>
-        <div>⏱️ Uptime: ${Math.floor(health.uptime / 3600)}h ${Math.floor((health.uptime % 3600) / 60)}m</div>
-        <div>📅 ${new Date(health.timestamp).toLocaleString()}</div>
+        <div><span class="badge green">● ONLINE</span> API Server (${health?.version || 'v1'})</div>
+        <div><span class="badge ${health?.services?.database === 'connected' ? 'green' : 'orange'}">● ${health?.services?.database || 'in-memory'}</span> Data Core</div>
+        <div><span class="badge ${health?.services?.redis === 'connected' ? 'green' : 'gray'}">● ${health?.services?.redis || 'memory sync'}</span> Redis</div>
+        <div>⏱️ Uptime: ${Math.floor((health?.uptime || process.uptime()) / 3600)}h ${Math.floor(((health?.uptime || process.uptime()) % 3600) / 60)}m</div>
+        <div>📅 ${new Date(health?.timestamp || Date.now()).toLocaleString()}</div>
       </div>
     `;
   } else {

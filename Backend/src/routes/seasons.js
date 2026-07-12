@@ -57,14 +57,31 @@ const SEASON_CONFIGS = [
 // ─── Initialize ─────────────────────────────────────────────────
 function initSeasons() {
   if (seasons.length > 0) return;
-  seasons = SEASON_CONFIGS;
-
-  // Find current season
-  const now = new Date();
-  const current = seasons.find(s => now >= s.startDate && now <= s.endDate);
-  if (current) currentSeasonId = current.id;
-  
-  console.log(`📅 Seasons loaded: ${seasons.length} (current: ${currentSeasonId || 'none'})`);
+  seasons = global.memoryStore?.seasons || [
+    {
+      id: 'season_1',
+      name: 'Season 1: Sci-Fi Arena Fall',
+      theme: 'Clean Sci-Fi Minimalism',
+      durationDays: 90,
+      battlePassTiers: 100,
+      xpPerTier: 1000,
+      premiumCost: 950,
+      isCurrent: true,
+      startDate: new Date().toISOString(),
+      endDate: new Date(Date.now() + 90 * 86400000).toISOString(),
+      weapons: [
+        { id: 'pc90_plasma_cannon', name: 'PC-90 Plasma Cannon', tier: 1, isFree: true },
+        { id: 'a17_striker', name: 'A-17 Striker Gold', tier: 25, isFree: false }
+      ],
+      rewards: [
+        { tier: 1, type: 'character', id: 'neon_vanguard', name: 'Vanguard Recruit Banner', premium: false },
+        { tier: 10, type: 'armor', id: 'armor_vests', name: 'Tactical Recon Vest', premium: true },
+        { tier: 50, type: 'character', id: 'cyber_commando_skin', name: 'Cyber Commando Skin', premium: true }
+      ]
+    }
+  ];
+  currentSeasonId = 'season_1';
+  console.log(`📅 Seasons loaded: ${seasons.length} (current: ${currentSeasonId})`);
 }
 
 initSeasons();
