@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { requireAdmin } = require('../middleware/auth');
+const { authenticate, adminOnly } = require('../middleware/auth');
 
 let supervisionInstance = null;
 
@@ -9,7 +9,7 @@ function setSupervisionService(instance) {
 }
 
 // GET /api/v1/supervision/status
-router.get('/status', requireAdmin, (req, res) => {
+router.get('/status', [authenticate, adminOnly], (req, res) => {
   if (!supervisionInstance) {
     return res.status(503).json({
       success: false,
@@ -23,7 +23,7 @@ router.get('/status', requireAdmin, (req, res) => {
 });
 
 // POST /api/v1/supervision/action
-router.post('/action', requireAdmin, async (req, res) => {
+router.post('/action', [authenticate, adminOnly], async (req, res) => {
   if (!supervisionInstance) {
     return res.status(503).json({
       success: false,
