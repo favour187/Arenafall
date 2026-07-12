@@ -40,18 +40,21 @@ namespace ArenaFall.Core
             // Compound 6: Crash Site (Mid-West - Starship wreckage, crater cover & hazardous energy)
             BuildCrashSiteCompound(new Vector3(600, 0, 2000), terrainRoot.transform);
 
+            // Compound 7: Orbital Relay Station (North - Giant satellite dishes, Zero-G jump pads & Plasma Cannons)
+            BuildOrbitalRelayStationCompound(new Vector3(2000, 0, 3200), terrainRoot.transform);
+
             // Build connecting highway network and tactical cover barriers between POIs
             BuildConnectingInfrastructure(terrainRoot.transform);
 
-            Debug.Log("[MapPOIBuilder] ✓ 6 Compound POIs & infrastructure fully built with 3D architecture.");
+            Debug.Log("[MapPOIBuilder] ✓ 7 Compound POIs & infrastructure fully built with 3D architecture.");
         }
 
         private static void PreloadCompoundArt()
         {
-            string[] names = { "nexus_tower", "industrial_factory", "hydro_station", "frost_depots", "solar_fields_landscape", "crash_site" };
+            string[] names = { "nexus_tower", "industrial_factory", "hydro_station", "frost_depots", "solar_fields_landscape", "crash_site", "orbital_relay_station" };
             foreach (var n in names)
             {
-                var tex = Resources.Load<Texture2D>($"Art/Buildings/{n}") ?? Resources.Load<Texture2D>($"Art/Environment/CrashSite/crash_site") ?? Resources.Load<Texture2D>($"Art/Environment/FrostDepots/frost_depots") ?? Resources.Load<Texture2D>($"Art/Environment/HydroStation/hydro_station") ?? Resources.Load<Texture2D>($"Art/Environment/SolarFields/solar_fields_landscape");
+                var tex = Resources.Load<Texture2D>($"Art/Buildings/{n}") ?? Resources.Load<Texture2D>($"Art/Environment/{n}") ?? Resources.Load<Texture2D>($"Art/Environment/CrashSite/crash_site") ?? Resources.Load<Texture2D>($"Art/Environment/FrostDepots/frost_depots") ?? Resources.Load<Texture2D>($"Art/Environment/HydroStation/hydro_station") ?? Resources.Load<Texture2D>($"Art/Environment/SolarFields/solar_fields_landscape");
                 if (tex != null) _poiTextureCache[n] = tex;
             }
         }
@@ -221,6 +224,45 @@ namespace ArenaFall.Core
             Spawn3DWeaponRack(compound.transform, new Vector3(15, 3, 10), "s14_stinger", false);
         }
 
+        // ─── 7. ORBITAL RELAY STATION COMPOUND (NORTH POI) ──────────
+        private static void BuildOrbitalRelayStationCompound(Vector3 center, Transform parent)
+        {
+            var compound = new GameObject("[POI] Orbital Satellite Relay Station");
+            compound.transform.SetParent(parent);
+            compound.transform.position = center;
+
+            // Main Relay Pedestal Base (110x12x110m)
+            CreateSciFiBox("RelayPedestal", compound.transform, new Vector3(0, 6, 0), new Vector3(110, 12, 110), new Color(0.1f, 0.16f, 0.26f));
+
+            // Central Satellite Tower & Radar Dish Support
+            CreateSciFiBox("RadarTower", compound.transform, new Vector3(0, 38, 0), new Vector3(20, 52, 20), new Color(0.15f, 0.22f, 0.35f));
+
+            // Radar Transmission Dish (Tilted cylinder/box)
+            var dish = CreateSciFiBox("SatelliteDish", compound.transform, new Vector3(0, 64, 0), new Vector3(60, 4, 60), new Color(0.25f, 0.32f, 0.45f));
+            dish.transform.localRotation = Quaternion.Euler(35, 0, 0);
+
+            // 4 Zero-Gravity Launch Pads (Gravity Manipulation Feature from GDD)
+            for (int i = 0; i < 4; i++)
+            {
+                float angle = (i * 90f + 45f) * Mathf.Deg2Rad;
+                Vector3 padPos = new Vector3(Mathf.Cos(angle) * 42f, 12.5f, Mathf.Sin(angle) * 42f);
+                var pad = CreateSciFiBox($"ZeroGLaunchPad_{i}", compound.transform, padPos, new Vector3(16, 1, 16), new Color(0f, 0.83f, 1f));
+                
+                // Add jump/bounce trigger to pad
+                var trigger = pad.AddComponent<BoxCollider>();
+                trigger.isTrigger = true;
+                trigger.size = new Vector3(1, 4, 1);
+                var bouncer = pad.AddComponent<LaunchPadBouncer>();
+                bouncer.LaunchVelocity = new Vector3(0, 28f, 0);
+            }
+
+            CreateCompoundBillboard("OrbitalRelayFacade", compound.transform, new Vector3(0, 42, -11), new Vector3(36, 16, 1), "orbital_relay_station");
+
+            // Spawn new heavy PC-90 Plasma Cannon (`pc90_plasma_cannon`) and high tier loot
+            Spawn3DWeaponRack(compound.transform, new Vector3(0, 13, 10), "pc90_plasma_cannon", true);
+            Spawn3DWeaponRack(compound.transform, new Vector3(-15, 13, 0), "sr25_longshot", true);
+        }
+
         // ─── CONNECTING INFRASTRUCTURE & COVER BARRIERS ─────────────
         private static void BuildConnectingInfrastructure(Transform parent)
         {
@@ -296,6 +338,34 @@ namespace ArenaFall.Core
             itemData.itemId = weaponId;
             itemData.itemName = weaponId;
             loot.Initialize(itemData, 1);
+        }
+    }
+
+    /// <summary>
+    /// Zero-Gravity Launch Pad Trigger (Gravity Manipulation Feature).
+    /// Propels players upward when they enter the launch pad zone.
+    /// </summary>
+    public class LaunchPadBouncer : MonoBehaviour
+    {
+        public Vector3 LaunchVelocity = new Vector3(0, 28f, 0);
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.CompareTag("Player") || other.GetComponent<CharacterController>() != null)
+            {
+                var cc = other.GetComponent<CharacterController>();
+                var rb = other.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.velocity = new Vector3(rb.velocity.x, LaunchVelocity.y, rb.velocity.z);
+                }
+                else if (other.GetComponent<Gameplay.Characters.PlayerCharacterController>() != null)
+                {
+                    // Propel player upwards via movement logic or transform lift
+                    other.transform.position += new Vector3(0, 2f, 0);
+                    Debug.Log($"[ZeroGLaunchPad] Propelled {other.name} upward into low gravity!");
+                }
+            }
         }
     }
 }

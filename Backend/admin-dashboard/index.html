@@ -469,29 +469,62 @@ async function renderSeasons(el) {
     </div>
   `;
 
-  const seasonsRes = await apiGet('/seasons');
-  const seasonsList = (seasonsRes && !seasonsRes.error && seasonsRes.seasons && seasonsRes.seasons.length > 0)
+  window.seasonsList = window.seasonsList || ((seasonsRes && !seasonsRes.error && seasonsRes.seasons && seasonsRes.seasons.length > 0)
     ? seasonsRes.seasons
     : [
         { id: 's1', name: 'Season 1: Cyber Genesis', theme: 'Neon Sci-Fi Arena', startDate: new Date(Date.now()-1000000000).toISOString(), endDate: new Date(Date.now()+5000000000).toISOString(), battlePassTiers: 100, isCurrent: true },
         { id: 's2', name: 'Season 2: Solar Eclipse', theme: 'Desert Solar Fields & Energy Wars', startDate: new Date(Date.now()+5000000000).toISOString(), endDate: new Date(Date.now()+10000000000).toISOString(), battlePassTiers: 100, isCurrent: false }
-      ];
+      ]);
 
-  document.getElementById('season-list').innerHTML = `
-    <table>
-      <tr><th>Season</th><th>Theme</th><th>Duration</th><th>Tiers</th><th>Status</th><th>Action</th></tr>
-      ${seasonsList.map(s => `
-        <tr>
-          <td><strong>${s.name}</strong></td>
-          <td>${s.theme}</td>
-          <td>${new Date(s.startDate).toLocaleDateString()} — ${new Date(s.endDate).toLocaleDateString()}</td>
-          <td>${s.battlePassTiers} tiers</td>
-          <td><span class="badge ${s.isCurrent ? 'green' : 'gray'}">${s.isCurrent ? '🟢 Active' : 'Upcoming'}</span></td>
-          <td><button class="btn btn-sm btn-cyan" onclick="showToast('Editing ${s.name}')">Edit</button></td>
-        </tr>
-      `).join('')}
-    </table>
-  `;
+  window.renderSeasonsTable = () => {
+    document.getElementById('season-list').innerHTML = `
+      <table>
+        <tr><th>Season</th><th>Theme</th><th>Duration</th><th>Tiers</th><th>Status</th><th>Action</th></tr>
+        ${window.seasonsList.map((s, idx) => `
+          <tr>
+            <td><strong>${s.name}</strong></td>
+            <td>${s.theme}</td>
+            <td>${new Date(s.startDate).toLocaleDateString()} — ${new Date(s.endDate).toLocaleDateString()}</td>
+            <td>${s.battlePassTiers} tiers</td>
+            <td><span class="badge ${s.isCurrent ? 'green' : 'gray'}">${s.isCurrent ? '🟢 Active' : 'Upcoming'}</span></td>
+            <td><button class="btn btn-sm btn-cyan" onclick="showEditSeasonModal(${idx})">Edit</button></td>
+          </tr>
+        `).join('')}
+      </table>
+    `;
+  };
+
+  window.showEditSeasonModal = (idx) => {
+    const season = window.seasonsList[idx];
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2 style="margin-bottom:16px;">Edit ${season.name}</h2>
+        <div class="form-group"><label>Season Name</label><input id="es-name" value="${season.name}"></div>
+        <div class="form-group"><label>Theme</label><input id="es-theme" value="${season.theme}"></div>
+        <div class="form-group"><label>Battle Pass Tiers</label><input id="es-tiers" type="number" value="${season.battlePassTiers}"></div>
+        <div class="form-group"><label>Status</label><select id="es-status"><option value="true" ${season.isCurrent ? 'selected' : ''}>Active</option><option value="false" ${!season.isCurrent ? 'selected' : ''}>Upcoming/Ended</option></select></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+          <button class="btn btn-sm" style="background:var(--bg3);" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="saveEditedSeason(${idx})">Save Changes</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    window.saveEditedSeason = (i) => {
+      window.seasonsList[i].name = document.getElementById('es-name')?.value || window.seasonsList[i].name;
+      window.seasonsList[i].theme = document.getElementById('es-theme')?.value || window.seasonsList[i].theme;
+      window.seasonsList[i].battlePassTiers = parseInt(document.getElementById('es-tiers')?.value || '100');
+      window.seasonsList[i].isCurrent = document.getElementById('es-status')?.value === 'true';
+      showToast(`Updated ${window.seasonsList[i].name} successfully! 📅`);
+      overlay.remove();
+      window.renderSeasonsTable();
+    };
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  };
+
+  window.renderSeasonsTable();
 
   const demoRewards = [
     { tier: 1, name: 'Vanguard Recruit Banner', premium: false },
@@ -556,24 +589,79 @@ async function renderReplays(el) {
 }
 
 // ─── SHOP ───────────────────────────────────────────────────────
+window.shopItems = window.shopItems || [
+  { id: 'sh1', name: 'Cyber Commando Skin', type: 'character', price: 650, currency: 'Credits', rarity: 'Legendary' },
+  { id: 'sh2', name: 'PC-90 Plasma Cannon', type: 'weapon_skin', price: 450, currency: 'Credits', rarity: 'Epic' },
+  { id: 'sh3', name: 'Armored Mech Walker Camo', type: 'vehicle_skin', price: 500, currency: 'Credits', rarity: 'Legendary' },
+  { id: 'sh4', name: 'Deployable Shield Dome', type: 'item', price: 250, currency: 'Credits', rarity: 'Rare' },
+  { id: 'sh5', name: 'Victory Emote', type: 'emote', price: 200, currency: 'Credits', rarity: 'Uncommon' }
+];
+
 async function renderShop(el) {
   el.innerHTML = `
     <h1 style="margin-bottom:16px;">🛒 Shop Management</h1>
     <div class="card">
-      <div class="card-header"><h2>Catalog Items</h2><button class="btn btn-primary btn-sm" onclick="showToast('Add item modal')">+ Add Item</button></div>
+      <div class="card-header"><h2>Catalog Items (${window.shopItems.length})</h2><button class="btn btn-primary btn-sm" onclick="showAddItemModal()">+ Add Item</button></div>
       <div id="shop-items">Loading...</div>
     </div>
   `;
-  document.getElementById('shop-items').innerHTML = `
-    <table>
-      <tr><th>Item</th><th>Type</th><th>Price</th><th>Currency</th><th>Rarity</th><th>Actions</th></tr>
-      <tr><td>Phantom Operative</td><td>character</td><td>500</td><td>Credits</td><td><span class="badge cyan">Rare</span></td><td><button class="btn btn-sm btn-danger">Remove</button></td></tr>
-      <tr><td>Neon A-17 Striker</td><td>weapon_skin</td><td>300</td><td>Credits</td><td><span class="badge orange">Epic</span></td><td><button class="btn btn-sm btn-danger">Remove</button></td></tr>
-      <tr><td>Victory Dance</td><td>emote</td><td>200</td><td>Credits</td><td><span class="badge green">Uncommon</span></td><td><button class="btn btn-sm btn-danger">Remove</button></td></tr>
-      <tr><td>Battle Pass Premium</td><td>battlepass</td><td>950</td><td>Premium</td><td><span class="badge orange">Legendary</span></td><td><button class="btn btn-sm btn-danger">Remove</button></td></tr>
-      <tr><td>2000 Credits Pack</td><td>currency</td><td>349</td><td>Premium</td><td><span class="badge cyan">Uncommon</span></td><td><button class="btn btn-sm btn-danger">Remove</button></td></tr>
-    </table>
-  `;
+  window.renderShopTable = () => {
+    document.getElementById('shop-items').innerHTML = `
+      <table>
+        <tr><th>Item</th><th>Type</th><th>Price</th><th>Currency</th><th>Rarity</th><th>Actions</th></tr>
+        ${window.shopItems.map((it, idx) => `
+          <tr>
+            <td><strong>${it.name}</strong></td>
+            <td><span class="badge gray">${it.type}</span></td>
+            <td>${it.price}</td>
+            <td>${it.currency}</td>
+            <td><span class="badge ${it.rarity === 'Legendary' || it.rarity === 'Epic' ? 'orange' : 'cyan'}">${it.rarity}</span></td>
+            <td><button class="btn btn-sm btn-danger" onclick="removeShopItem(${idx})">Remove</button></td>
+          </tr>
+        `).join('')}
+      </table>
+    `;
+  };
+  window.removeShopItem = (idx) => {
+    const removed = window.shopItems[idx];
+    window.shopItems.splice(idx, 1);
+    showToast(`Removed ${removed.name} from Shop catalog.`);
+    window.renderShopTable();
+  };
+  window.showAddItemModal = () => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2 style="margin-bottom:16px;">+ Add New Shop Catalog Item</h2>
+        <div class="form-group"><label>Item Name</label><input id="si-name" placeholder="e.g. Orbital Relay Skin"></div>
+        <div class="form-group"><label>Item Type</label><select id="si-type"><option value="character">Character Skin</option><option value="weapon_skin">Weapon Skin</option><option value="vehicle_skin">Vehicle Skin</option><option value="emote">Emote</option><option value="battlepass">Battle Pass</option><option value="currency">Currency Pack</option></select></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group"><label>Price</label><input id="si-price" type="number" value="350"></div>
+          <div class="form-group"><label>Currency</label><select id="si-curr"><option>Credits</option><option>Premium</option></select></div>
+        </div>
+        <div class="form-group"><label>Rarity</label><select id="si-rarity"><option>Common</option><option>Uncommon</option><option>Rare</option><option>Epic</option><option>Legendary</option></select></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+          <button class="btn btn-sm" style="background:var(--bg3);" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="saveNewShopItem()">Add to Catalog</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    window.saveNewShopItem = () => {
+      const name = document.getElementById('si-name')?.value || 'New Custom Item';
+      const type = document.getElementById('si-type')?.value || 'character';
+      const price = parseInt(document.getElementById('si-price')?.value || '350');
+      const currency = document.getElementById('si-curr')?.value || 'Credits';
+      const rarity = document.getElementById('si-rarity')?.value || 'Epic';
+      window.shopItems.unshift({ id: `sh_${Date.now()}`, name, type, price, currency, rarity });
+      showToast(`Added ${name} (${rarity}) to Shop catalog! 🛒`);
+      overlay.remove();
+      window.renderShopTable();
+    };
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  };
+  window.renderShopTable();
 }
 
 // ─── REPORTS ────────────────────────────────────────────────────
@@ -604,21 +692,36 @@ function renderSettings(el) {
     <div class="card">
       <div class="card-header"><h2>API Configuration</h2></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group"><label>API URL</label><input value="${API_URL}"></div>
-        <div class="form-group"><label>Discord Guild ID</label><input placeholder="Enter Discord guild ID"></div>
-        <div class="form-group"><label>Admin Role ID</label><input placeholder="Enter admin role ID"></div>
-        <div class="form-group"><label>Log Channel ID</label><input placeholder="Enter log channel ID"></div>
-        <div class="form-group"><label>Max Players Per Match</label><input type="number" value="60"></div>
-        <div class="form-group"><label>Anti-Cheat</label><select><option>Enabled</option><option>Disabled</option></select></div>
+        <div class="form-group"><label>API URL</label><input id="cfg-url" value="${localStorage.getItem('custom_api_url') || API_URL}"></div>
+        <div class="form-group"><label>Discord Guild ID</label><input id="cfg-guild" placeholder="Enter Discord guild ID" value="${localStorage.getItem('cfg_guild') || ''}"></div>
+        <div class="form-group"><label>Admin Role ID</label><input id="cfg-role" placeholder="Enter admin role ID" value="${localStorage.getItem('cfg_role') || ''}"></div>
+        <div class="form-group"><label>Log Channel ID</label><input id="cfg-log" placeholder="Enter log channel ID" value="${localStorage.getItem('cfg_log') || ''}"></div>
+        <div class="form-group"><label>Max Players Per Match</label><input id="cfg-max" type="number" value="${localStorage.getItem('cfg_max') || 60}"></div>
+        <div class="form-group"><label>Anti-Cheat</label><select id="cfg-ac"><option>Enabled</option><option>Disabled</option></select></div>
       </div>
-      <button class="btn btn-primary" style="margin-top:12px;" onclick="showToast('Settings saved')">Save Settings</button>
+      <button class="btn btn-primary" style="margin-top:12px;" onclick="saveAdminSettings()">Save Settings</button>
     </div>
     <div class="card">
       <div class="card-header"><h2>Danger Zone</h2></div>
       <p style="color:var(--text3);font-size:13px;margin-bottom:12px;">Actions here are irreversible.</p>
-      <button class="btn btn-danger" onclick="showToast('This would wipe all data in production')">Reset All Data</button>
+      <button class="btn btn-danger" onclick="resetAllAdminData()">Reset All Data</button>
     </div>
   `;
+  window.saveAdminSettings = () => {
+    localStorage.setItem('custom_api_url', document.getElementById('cfg-url')?.value || API_URL);
+    localStorage.setItem('cfg_guild', document.getElementById('cfg-guild')?.value || '');
+    localStorage.setItem('cfg_role', document.getElementById('cfg-role')?.value || '');
+    localStorage.setItem('cfg_log', document.getElementById('cfg-log')?.value || '');
+    localStorage.setItem('cfg_max', document.getElementById('cfg-max')?.value || '60');
+    showToast('Admin settings & API URL saved successfully! ⚙️');
+  };
+  window.resetAllAdminData = () => {
+    if (confirm('Are you sure you want to reset all admin dashboard caches and custom settings?')) {
+      localStorage.clear();
+      showToast('All dashboard data reset. Reloading...');
+      setTimeout(() => window.location.reload(), 1500);
+    }
+  };
 }
 
 // ─── SUPERVISION ────────────────────────────────────────────────

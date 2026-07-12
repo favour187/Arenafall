@@ -16,7 +16,7 @@ namespace ArenaFall.Core
 
         public static void PreloadArtAssets()
         {
-            string[] names = { "armor_vests", "backpack_tiers", "ranger_atv", "hovercraft", "cyclone_bike", "transport_truck", "ai_bot", "male_character_front", "female_character_front" };
+            string[] names = { "armor_vests", "backpack_tiers", "ranger_atv", "hovercraft", "cyclone_bike", "transport_truck", "armored_mech_walker", "cyber_commando_skin", "ai_bot", "male_character_front", "female_character_front" };
             foreach (var n in names)
             {
                 var tex = Resources.Load<Texture2D>($"Art/Characters/{n}") ?? Resources.Load<Texture2D>($"Art/Vehicles/{n}") ?? Resources.Load<Texture2D>($"Art/Characters/Male/{n}") ?? Resources.Load<Texture2D>($"Art/Characters/Female/{n}") ?? Resources.Load<Texture2D>($"Art/Characters/NPCs/{n}");
@@ -123,7 +123,10 @@ namespace ArenaFall.Core
             // Spawn Transport Truck at Industrial Factory
             SpawnVehicle("Heavy Armored Truck", "transport_truck", new Vector3(3250, 2, 3150), new Vector3(3.4f, 2.8f, 6.5f), new Color(0.22f, 0.24f, 0.28f));
 
-            Debug.Log("[3DCharacterAndVehicleBuilder] ✓ 4 Drivable Vehicles active with VehicleController.");
+            // Spawn 5th Heavy Drivable Vehicle: Armored Mech Walker at Orbital Relay Station
+            SpawnVehicle("Armored Mech Walker", "armored_mech_walker", new Vector3(2000, 2, 3150), new Vector3(2.8f, 3.6f, 3.2f), new Color(0.12f, 0.2f, 0.35f));
+
+            Debug.Log("[3DCharacterAndVehicleBuilder] ✓ 5 Drivable Vehicles (including Armored Mech Walker) active.");
         }
 
         private static GameObject SpawnVehicle(string vehicleName, string textureKey, Vector3 position, Vector3 size, Color chassisColor)
