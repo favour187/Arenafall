@@ -80,6 +80,18 @@ namespace ArenaFall.Gameplay.Weapons
 
         private void Update()
         {
+            if (_input == null) _input = InputManager.Instance ?? ServiceLocator.Get<InputManager>();
+            if (_input != null && _isEquipped)
+            {
+                if (_input.IsFiring && !_isFiring) StartFire();
+                else if (!_input.IsFiring && _isFiring) StopFire();
+
+                if (_input.IsAiming && !_isAiming) SetAiming(true);
+                else if (!_input.IsAiming && _isAiming) SetAiming(false);
+
+                if (_input.IsReloading && !_isReloading) Reload();
+            }
+
             if (!_isEquipped) return;
 
             // Accuracy recovery

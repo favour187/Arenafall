@@ -50,8 +50,8 @@ namespace ArenaFall.Managers
         {
             if (_inputActionAsset == null)
             {
-                Debug.LogError("[InputManager] No InputActionAsset assigned!");
-                return;
+                Debug.Log("[InputManager] No InputActionAsset assigned. Creating programmatic ActionAsset & enabling direct keyboard/mouse fallback...");
+                _inputActionAsset = ScriptableObject.CreateInstance<InputActionAsset>();
             }
 
             _gameplayMap = _inputActionAsset.FindActionMap("Gameplay");
@@ -66,6 +66,117 @@ namespace ArenaFall.Managers
 
             // Bind all gameplay input events
             BindGameplayInput();
+            _gameplayMap.Enable();
+        }
+
+        private void Update()
+        {
+            // Direct Programmatic Keyboard / Mouse & Legacy Input Fallback
+            // Ensures movement, jumping, shooting, aiming, and interactions work smoothly without manual action map configuration!
+            if (Keyboard.current != null)
+            {
+                float x = 0; float y = 0;
+                if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) y += 1;
+                if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) y -= 1;
+                if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) x -= 1;
+                if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) x += 1;
+                
+                if (MoveInput.sqrMagnitude < 0.01f || (_gameplayMap == null))
+                {
+                    MoveInput = new Vector2(x, y).normalized;
+                }
+
+                if (Keyboard.current.spaceKey.isPressed) IsJumping = true;
+                else if (_gameplayMap == null) IsJumping = false;
+
+                if (Keyboard.current.leftShiftKey.isPressed) IsSprinting = true;
+                else if (_gameplayMap == null) IsSprinting = false;
+
+                if (Keyboard.current.cKey.wasPressedThisFrame || Keyboard.current.leftCtrlKey.wasPressedThisFrame) IsCrouching = !IsCrouching;
+                if (Keyboard.current.rKey.isPressed) IsReloading = true;
+                else if (_gameplayMap == null) IsReloading = false;
+
+                if (Keyboard.current.fKey.wasPressedThisFrame || Keyboard.current.eKey.wasPressedThisFrame)
+                {
+                    TriggerInteractEvent();
+                }
+            }
+            else
+            {
+                if (MoveInput.sqrMagnitude < 0.01f)
+                {
+                    MoveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
+                }
+                if (Input.GetKey(KeyCode.Space)) IsJumping = true;
+                if (Input.GetKey(KeyCode.LeftShift)) IsSprinting = true;
+                if (Input.GetKeyDown(KeyCode.C)) IsCrouching = !IsCrouching;
+                if (Input.GetKeyDown(KeyCode.R)) IsReloading = true;
+                if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.E)) TriggerInteractEvent();
+            }
+
+            if (Mouse.current != null)
+            {
+                Vector2 delta = Mouse.current.delta.ReadValue() * (Sensitivity / 50f);
+                if (delta.sqrMagnitude > 0.0001f || _gameplayMap == null) LookInput = delta;
+                if (Mouse.current.leftButton.isPressed) IsFiring = true;
+                else if (_gameplayMap == null) IsFiring = false;
+                if (Mouse.current.rightButton.isPressed) IsAiming = true;
+                else if (_gameplayMap == null) IsAiming = false;
+            }
+            else
+            {
+                LookInput = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")) * Sensitivity;
+                IsFiring = Input.GetMouseButton(0);
+                IsAiming = Input.GetMouseButton(1);
+            }
+        }
+
+        private void TriggerInteractEvent()
+        {
+            var playerObj = GameObject.Find("[AUTO] Player") ?? GameObject.Find("Player") ?? GameObject.FindGameObjectWithTag("Player");
+            if (playerObj == null && Camera.main != null) playerObj = Camera.main.gameObject;
+            if (playerObj == null) return;
+
+            // 1. Check if currently inside a vehicle to exit
+            if (playerObj.transform.parent != null && playerObj.transform.parent.GetComponentInParent<Gameplay.Vehicles.VehicleController>() != null)
+            {
+                var currentVeh = playerObj.transform.parent.GetComponentInParent<Gameplay.Vehicles.VehicleController>();
+                currentVeh.ExitVehicle(playerObj.transform);
+                if (CameraManager.Instance != null) CameraManager.Instance.SetTarget(playerObj.transform);
+                Debug.Log("[InputManager] Exited vehicle.");
+                return;
+            }
+
+            // 2. Check nearby Vehicles to enter
+            var vehicles = FindObjectsOfType<Gameplay.Vehicles.VehicleController>();
+            foreach (var veh in vehicles)
+            {
+                if (Vector3.Distance(playerObj.transform.position, veh.transform.position) < 8f)
+                {
+                    if (veh.EnterVehicle(playerObj.transform))
+                    {
+                        if (CameraManager.Instance != null) CameraManager.Instance.SetTarget(veh.transform);
+                        Debug.Log($"[InputManager] Entered vehicle: {veh.VehicleName}");
+                        return;
+                    }
+                }
+            }
+
+            // 3. Check nearby Items/Weapons to pick up
+            var interactables = FindObjectsOfType<MonoBehaviour>();
+            foreach (var obj in interactables)
+            {
+                if (obj is Interfaces.IPickupable pickup && pickup.CanPickup)
+                {
+                    float dist = Vector3.Distance(playerObj.transform.position, ((MonoBehaviour)pickup).transform.position);
+                    if (dist < 5f)
+                    {
+                        Debug.Log($"[InputManager] Picked up item: {pickup.PickupPrompt}");
+                        Destroy(((MonoBehaviour)pickup).gameObject);
+                        break;
+                    }
+                }
+            }
         }
 
         private void SetupDefaultGameplayActions(InputActionMap map)

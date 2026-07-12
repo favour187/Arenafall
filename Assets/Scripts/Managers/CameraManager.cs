@@ -71,6 +71,15 @@ namespace ArenaFall.Managers
         private void Update()
         {
             HandleFOVTransition();
+            if (InputManager.Instance != null && InputManager.Instance.LookInput.sqrMagnitude > 0.0001f)
+            {
+                AddLookInput(InputManager.Instance.LookInput);
+            }
+            if (InputManager.Instance != null)
+            {
+                _isAiming = InputManager.Instance.IsAiming;
+                _isSprinting = InputManager.Instance.IsSprinting;
+            }
         }
 
         private void LateUpdate()
@@ -102,7 +111,7 @@ namespace ArenaFall.Managers
             // Reset look angles
             if (target != null)
             {
-                _lookAngles = target.eulerAngles;
+                _lookAngles = new Vector2(target.eulerAngles.y, 10f);
             }
         }
 
@@ -128,7 +137,7 @@ namespace ArenaFall.Managers
         public void AddLookInput(Vector2 lookInput)
         {
             _lookAngles.x += lookInput.x * _cameraSensitivity;
-            _lookAngles.y += lookInput.y * _cameraSensitivity;
+            _lookAngles.y -= lookInput.y * _cameraSensitivity;
             _lookAngles.y = Mathf.Clamp(_lookAngles.y, _verticalLookLimits.x, _verticalLookLimits.y);
         }
 
@@ -160,15 +169,16 @@ namespace ArenaFall.Managers
         private void UpdateFollowCamera()
         {
             if (_target == null) return;
+            if (_mainCamera == null) _mainCamera = Camera.main;
 
-            // Calculate camera position relative to target
+            float dist = _isAiming ? _followDistance * 0.5f : _followDistance;
             Quaternion rotation = Quaternion.Euler(_lookAngles.y, _lookAngles.x, 0);
-            Vector3 offset = rotation * new Vector3(0, 0, -_followDistance);
+            Vector3 offset = rotation * new Vector3(_isAiming ? 0.8f : 0.4f, 0, -dist);
             Vector3 targetPosition = _target.position + Vector3.up * _followHeight + offset;
 
             // Check for obstacles
             RaycastHit hit;
-            if (Physics.Raycast(_target.position + Vector3.up * _followHeight, offset.normalized, out hit, _followDistance))
+            if (Physics.Raycast(_target.position + Vector3.up * _followHeight, offset.normalized, out hit, dist))
             {
                 targetPosition = hit.point - offset.normalized * 0.3f;
             }
@@ -177,6 +187,11 @@ namespace ArenaFall.Managers
             {
                 _followCamera.transform.position = targetPosition;
                 _followCamera.transform.LookAt(_target.position + Vector3.up * _followHeight);
+            }
+            else if (_mainCamera != null)
+            {
+                _mainCamera.transform.position = targetPosition;
+                _mainCamera.transform.LookAt(_target.position + Vector3.up * (_isAiming ? 1.5f : _followHeight));
             }
         }
 

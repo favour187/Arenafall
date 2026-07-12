@@ -86,7 +86,7 @@ namespace ArenaFall.Gameplay.Characters
         public float MaxStamina => _maxStamina;
         public bool IsGrounded => _isGrounded;
         public bool IsMoving => _moveVelocity.magnitude > 0.1f;
-        public bool IsSprinting => _input.IsSprinting && _currentStamina > 0 && _isGrounded;
+        public bool IsSprinting => _input != null && _input.IsSprinting && _currentStamina > 0 && _isGrounded;
         public bool IsCrouching => _movementState == MovementState.Crouching;
         public MovementState State => _movementState;
 
@@ -94,7 +94,7 @@ namespace ArenaFall.Gameplay.Characters
         {
             _charController = GetComponent<CharacterController>();
             _health = GetComponent<CharacterHealth>();
-            _input = ServiceLocator.Get<InputManager>();
+            _input = ServiceLocator.Get<InputManager>() ?? InputManager.Instance;
             _currentStamina = _maxStamina;
             _jumpsRemaining = _maxJumps;
         }
@@ -108,6 +108,8 @@ namespace ArenaFall.Gameplay.Characters
         private void Update()
         {
             if (!_health.IsAlive) return;
+
+            if (_input == null) _input = InputManager.Instance ?? ServiceLocator.Get<InputManager>();
 
             HandleInput();
             HandleMovement();
@@ -267,6 +269,17 @@ namespace ArenaFall.Gameplay.Characters
 
         private void ApplyMovement()
         {
+            if (_moveVelocity.sqrMagnitude > 0.01f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(_moveVelocity);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 14f * Time.deltaTime);
+            }
+            else if (_cameraTransform != null && (_input != null && (_input.IsAiming || _input.IsFiring)))
+            {
+                Quaternion targetRot = Quaternion.Euler(0, _cameraTransform.eulerAngles.y, 0);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 16f * Time.deltaTime);
+            }
+
             Vector3 horizontalMove = _moveVelocity * _currentSpeed;
             Vector3 finalMove = horizontalMove + _verticalVelocity;
             _charController.Move(finalMove * Time.deltaTime);
@@ -284,7 +297,7 @@ namespace ArenaFall.Gameplay.Characters
         {
             _isSliding = false;
             _slideCooldownTimer = _slideCooldown;
-            if (_input.IsCrouching)
+            if (_input != null && _input.IsCrouching)
             {
                 _movementState = MovementState.Crouching;
             }

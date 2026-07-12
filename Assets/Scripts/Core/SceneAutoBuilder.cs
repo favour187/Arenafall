@@ -405,6 +405,18 @@ public class SceneAutoBuilder : MonoBehaviour
 
         // Build 3D Character Rig for Player with glowing cyan visor & armor vest
         3DCharacterAndVehicleBuilder.Build3DSciFiCharacterRig(playerObj.transform, "Player3DRig", true, new Color(0f, 0.83f, 1f));
+
+        // Equip starting weapon (`pc90_plasma_cannon` or `a17_striker`)
+        var weaponObj = new GameObject("EquippedWeapon");
+        weaponObj.transform.SetParent(playerObj.transform);
+        var wc = weaponObj.AddComponent<WeaponController>();
+        var wData = ScriptableObject.CreateInstance<Data.WeaponData>();
+        wData.weaponId = "pc90_plasma_cannon";
+        wData.weaponName = "PC-90 Plasma Cannon";
+        wData.damage = 38f;
+        wData.magazineSize = 30;
+        wData.maxReserveAmmo = 180;
+        wc.Equip(wData);
         
         // 6. Camera
         var camObj = new GameObject("[AUTO] MainCamera");
@@ -565,7 +577,7 @@ public class SceneAutoBuilder : MonoBehaviour
             wImg.preserveAspect = true;
         }
         
-        var weaponName = CreateText(weaponPanel.transform, "WeaponName", "A-17 STRIKER", 16, Color.white,
+        var weaponName = CreateText(weaponPanel.transform, "WeaponName", "PC-90 PLASMA CANNON", 16, Color.white,
             new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f));
         var wnrt = weaponName.GetComponent<RectTransform>();
         wnrt.anchoredPosition = new Vector2(100, 10);
