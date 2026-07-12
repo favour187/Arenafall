@@ -668,9 +668,9 @@ async function renderSupervision(el) {
   window.triggerSupervisionAction = async (action) => {
     showToast(`Executing ${action}...`);
     try {
-      const res = await fetch(\`\${API_URL}/supervision/action\`, {
+      const res = await fetch(`${API_URL}/supervision/action`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': \`Bearer \${localStorage.getItem('token') || ''}\` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` },
         body: JSON.stringify({ action })
       });
       const data = await res.json();
@@ -683,8 +683,8 @@ async function renderSupervision(el) {
 
   window.loadSupervisionStatus = async () => {
     try {
-      const res = await fetch(\`\${API_URL}/supervision/status\`, {
-        headers: { 'Authorization': \`Bearer \${localStorage.getItem('token') || ''}\` }
+      const res = await fetch(`${API_URL}/supervision/status`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }
       });
       const json = await res.json();
       if (json && json.success && json.data) {
@@ -702,15 +702,15 @@ async function renderSupervision(el) {
       elHealth.style.color = data.status === 'DEGRADED' ? 'var(--red)' : 'var(--green)';
     }
     const elTick = document.getElementById('sup-tick');
-    if (elTick) elTick.textContent = \`\${data.tickrateHz} Hz\`;
+    if (elTick) elTick.textContent = `${data.tickrateHz} Hz`;
     const elMatches = document.getElementById('sup-matches');
     if (elMatches) elMatches.textContent = data.activeMatchesCount || 0;
     const elSanctions = document.getElementById('sup-sanctions');
     if (elSanctions) elSanctions.textContent = data.autoSanctionsIssued || 0;
     const elMem = document.getElementById('sup-mem');
-    if (elMem) elMem.textContent = \`\${data.memoryMB} MB / \${data.memoryTotalMB} MB\`;
+    if (elMem) elMem.textContent = `${data.memoryMB} MB / ${data.memoryTotalMB} MB`;
     const elLatency = document.getElementById('sup-latency');
-    if (elLatency) elLatency.textContent = \`\${data.avgLatencyMs} ms\`;
+    if (elLatency) elLatency.textContent = `${data.avgLatencyMs} ms`;
     const elTotal = document.getElementById('sup-total-sessions');
     if (elTotal) elTotal.textContent = data.totalMatchesSupervised || 0;
     const elZombies = document.getElementById('sup-zombies');
@@ -721,20 +721,20 @@ async function renderSupervision(el) {
       if (data.activeInfractions.length === 0) {
         listEl.innerHTML = '<table><tr><th>Timestamp</th><th>Player ID</th><th>Player Name</th><th>Violation Type</th><th>Details</th></tr><tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">No infractions recorded in current window</td></tr></table>';
       } else {
-        listEl.innerHTML = \`
+        listEl.innerHTML = `
           <table>
             <tr><th>Timestamp</th><th>Player ID</th><th>Player Name</th><th>Violation Type</th><th>Details</th></tr>
-            \${data.activeInfractions.map(inf => \`
+            ${data.activeInfractions.map(inf => `
               <tr>
-                <td>\${new Date(inf.timestamp).toLocaleTimeString()}</td>
-                <td><code>\${inf.playerId}</code></td>
-                <td><strong>\${inf.playerName}</strong></td>
-                <td><span class="badge red">\${inf.violationType}</span></td>
-                <td style="color:var(--text2);">\${inf.details}</td>
+                <td>${new Date(inf.timestamp).toLocaleTimeString()}</td>
+                <td><code>${inf.playerId}</code></td>
+                <td><strong>${inf.playerName}</strong></td>
+                <td><span class="badge red">${inf.violationType}</span></td>
+                <td style="color:var(--text2);">${inf.details}</td>
               </tr>
-            \`).join('')}
+            `).join('')}
           </table>
-        \`;
+        `;
       }
     }
   };
@@ -748,11 +748,11 @@ async function renderSupervision(el) {
         if (state.page === 'supervision') window.updateSupervisionUI(metrics);
       });
       socket.on('supervision:alert', (alert) => {
-        showToast(\`🚨 Supervision Alert: \${alert.playerName || alert.matchId} -> \${alert.violationType || alert.type}\`);
+        showToast(`🚨 Supervision Alert: ${alert.playerName || alert.matchId} -> ${alert.violationType || alert.type}`);
         if (state.page === 'supervision') window.loadSupervisionStatus();
       });
       socket.on('supervision:sanction', (sanc) => {
-        showToast(\`⛔ Auto-Sanction: \${sanc.playerName} shadow-banned (\${sanc.reason})\`);
+        showToast(`⛔ Auto-Sanction: ${sanc.playerName} shadow-banned (${sanc.reason})`);
         if (state.page === 'supervision') window.loadSupervisionStatus();
       });
     } catch (err) {}
