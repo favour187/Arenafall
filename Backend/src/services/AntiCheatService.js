@@ -171,6 +171,10 @@ class AntiCheatService {
     // In production: save to database for admin review
   }
 
+  setSupervisionService(supervisionService) {
+    this.supervisionService = supervisionService;
+  }
+
   /**
    * Add suspicion score
    */
@@ -186,6 +190,10 @@ class AntiCheatService {
     const activity = this.suspiciousActivity.get(playerId);
     activity.reports.push({ type, value, timestamp: Date.now() });
     activity.suspicionScore += this.calculateTypeWeight(type);
+
+    if (this.supervisionService) {
+      this.supervisionService.handleAntiCheatAlert({ playerId }, type, `Suspicion Value: ${value} (Score: ${activity.suspicionScore})`);
+    }
   }
 
   /**

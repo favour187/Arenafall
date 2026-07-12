@@ -62,13 +62,26 @@ namespace ArenaFall.Gameplay.Vehicles
         public float MaxSpeed => _maxSpeed;
         public bool IsOccupied => _isOccupied;
         public int PassengerCount => _currentPassengerCount;
-        public int MaxPassengers => _seatPoints.Length;
+        public int MaxPassengers => _seatPoints != null ? _seatPoints.Length : 4;
         public float Health => _health;
         public float MaxHealth => _health;
 
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();
+            if (_seatPoints == null || _seatPoints.Length == 0)
+            {
+                _seatPoints = new Transform[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    var seat = new GameObject($"SeatPoint_{i}");
+                    seat.transform.SetParent(transform);
+                    seat.transform.localPosition = new Vector3((i % 2 == 0 ? -0.5f : 0.5f), 1f, (i < 2 ? 0.5f : -0.5f));
+                    _seatPoints[i] = seat.transform;
+                }
+            }
+            if (_wheelColliders == null) _wheelColliders = new WheelCollider[0];
+            if (_wheelMeshes == null) _wheelMeshes = new Transform[0];
             _passengers = new Transform[_seatPoints.Length];
             _healthComponent = gameObject.AddComponent<CharacterHealth>();
         }

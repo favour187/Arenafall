@@ -80,7 +80,7 @@
 <footer>© 2024 Arena Games. All rights reserved. | <a href="#" style="color:var(--text3);">Privacy</a> | <a href="#" style="color:var(--text3);">Terms</a></footer>
 
 <script>
-const API = 'https://arenafall-api.onrender.com/api/v1';
+const API = (window.location.hostname === 'localhost' && window.location.port === '3000') ? 'http://localhost:3000/api/v1' : 'https://arenafall-api.onrender.com/api/v1';
 const DISCORD = 'https://discord.gg/arenafall';
 
 async function api(path) {

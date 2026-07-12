@@ -114,6 +114,11 @@ async function connectDatabases() {
   }
 }
 
+// ─── Static Web Frontend & Admin Dashboard ─────────────────────
+const path = require('path');
+app.use('/admin', express.static(path.join(__dirname, '../admin-dashboard')));
+app.use('/', express.static(path.join(__dirname, '../web-frontend')));
+
 // ─── Health Check ──────────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({
@@ -140,6 +145,7 @@ const shopRoutes = require('./routes/shop');
 const tournamentRoutes = require('./routes/tournaments');
 const seasonRoutes = require('./routes/seasons');
 const replayRoutes = require('./routes/replays');
+const supervisionRoutes = require('./routes/supervision');
 
 // Pass redisClient to routes that need it after connection
 const originalConnect = connectDatabases;
@@ -158,15 +164,21 @@ app.use(`/api/${config.apiVersion}/shop`, shopRoutes);
 app.use(`/api/${config.apiVersion}/tournaments`, tournamentRoutes);
 app.use(`/api/${config.apiVersion}/seasons`, seasonRoutes);
 app.use(`/api/${config.apiVersion}/replays`, replayRoutes);
+app.use(`/api/${config.apiVersion}/supervision`, supervisionRoutes);
 
 // ─── Socket.IO Handlers ────────────────────────────────────────
 const MatchmakingService = require('./services/MatchmakingService');
 const GameSessionService = require('./services/GameSessionService');
 const AntiCheatService = require('./services/AntiCheatService');
+const BackendSupervisionService = require('./services/BackendSupervisionService');
 
 const matchmakingService = new MatchmakingService(io, redisClient, logger);
 const gameSessionService = new GameSessionService(io, redisClient, logger);
 const antiCheatService = new AntiCheatService(logger);
+const supervisionService = new BackendSupervisionService(io, redisClient, logger);
+
+supervisionRoutes.setSupervisionService(supervisionService);
+antiCheatService.setSupervisionService(supervisionService);
 
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token;

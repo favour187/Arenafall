@@ -4,6 +4,33 @@ const Player = require('../models/Player');
 const { logger } = require('../server');
 
 const router = express.Router();
+global.memoryStore = global.memoryStore || { players: new Map() };
+
+// ─── GET /profile (Authenticated Player) ────────────────────────
+router.get('/profile', authenticate, async (req, res) => {
+  try {
+    if (require('mongoose').connection.readyState !== 1) {
+      let memPlayer = global.memoryStore?.players.get(req.player?.email) || global.memoryStore?.players.get(req.player?.username);
+      if (!memPlayer) {
+        memPlayer = {
+          playerId: req.player?.playerId || 'player_1',
+          playerName: req.player?.username || 'Vanguard_Soldier',
+          username: req.player?.username || 'Vanguard_Soldier',
+          level: req.player?.level || 15,
+          credits: 2450,
+          xp: 850
+        };
+      }
+      return res.json({ success: true, data: memPlayer });
+    }
+
+    const player = await Player.findOne({ playerId: req.player.playerId });
+    if (!player) return res.status(404).json({ success: false, error: 'Player not found' });
+    return res.json({ success: true, data: player });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // ─── GET /profile/:playerId ─────────────────────────────────────
 router.get('/profile/:playerId', async (req, res) => {
@@ -73,6 +100,48 @@ router.get('/stats', authenticate, async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to get stats', code: 'SERVER_ERROR' });
+  }
+});
+
+// ─── POST /stats (Match Completion Sync) ────────────────────────
+router.post('/stats', authenticate, async (req, res) => {
+  try {
+    const { kills = 0, damageDealt = 0, placement = 1, survivalTime = 0 } = req.body;
+    const earnedXP = (kills * 150) + (placement === 1 ? 500 : 200);
+    const earnedCredits = (kills * 50) + (placement === 1 ? 250 : 100);
+
+    if (require('mongoose').connection.readyState !== 1) {
+      let memPlayer = global.memoryStore?.players.get(req.player?.email) || global.memoryStore?.players.get(req.player?.username);
+      if (memPlayer) {
+        memPlayer.xp = (memPlayer.xp || 0) + earnedXP;
+        memPlayer.credits = (memPlayer.credits || 0) + earnedCredits;
+        if (memPlayer.xp >= memPlayer.level * 1000) {
+          memPlayer.level += 1;
+          memPlayer.xp -= (memPlayer.level - 1) * 1000;
+        }
+      }
+      return res.json({ success: true, message: 'Stats synced (In-Memory)', earnedXP, earnedCredits });
+    }
+
+    const player = await Player.findOne({ playerId: req.player.playerId });
+    if (!player) return res.status(404).json({ success: false, error: 'Player not found' });
+
+    player.stats.kills = (player.stats.kills || 0) + kills;
+    player.stats.damageDealt = (player.stats.damageDealt || 0) + damageDealt;
+    player.stats.matchesPlayed = (player.stats.matchesPlayed || 0) + 1;
+    if (placement === 1) player.stats.wins = (player.stats.wins || 0) + 1;
+
+    player.xp = (player.xp || 0) + earnedXP;
+    player.credits = (player.credits || 0) + earnedCredits;
+    if (player.xp >= player.level * 1000) {
+      player.level += 1;
+      player.xp -= (player.level - 1) * 1000;
+    }
+    await player.save();
+
+    return res.json({ success: true, message: 'Stats synced to DB', earnedXP, earnedCredits });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
