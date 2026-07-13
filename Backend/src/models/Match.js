@@ -88,7 +88,6 @@ const matchSchema = new mongoose.Schema({
 });
 
 // ─── Indexes ────────────────────────────────────────────────────
-matchSchema.index({ matchId: 1 });
 matchSchema.index({ status: 1, createdAt: -1 });
 matchSchema.index({ 'players.playerId': 1 });
 matchSchema.index({ mode: 1, createdAt: -1 });

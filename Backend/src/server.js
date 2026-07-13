@@ -34,6 +34,7 @@ const logger = createLogger({
 // ─── Config ────────────────────────────────────────────────────
 const config = {
   port: parseInt(process.env.PORT) || 3000,
+  databaseUrl: process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.NEON_URL || process.env.PG_URL || '',
   mongoUri: process.env.MONGODB_URI || process.env.MONGO_URI || process.env.MONGO_URL || process.env.DATABASE_URL || process.env.DB_URI || process.env.MONGODB_URL || 'mongodb://localhost:27017/arenafall',
   redisUrl: process.env.REDIS_URL || process.env.REDIS_URI || process.env.REDIS || 'redis://localhost:6379',
   jwtSecret: process.env.JWT_SECRET || 'arenafall-dev-secret-key-2024',
@@ -85,25 +86,44 @@ const io = new Server(server, {
   maxHttpBufferSize: 1e6
 });
 
+// Export early to eliminate all circular dependency warnings when routes are required
+module.exports = { app, server, io, logger, config, redisClient: null };
+
+const NeonDatabaseAdapter = require('./services/NeonDatabaseAdapter');
+
 // ─── Database Connections ──────────────────────────────────────
 let dbConnected = false;
 let redisClient = null;
 global.mongoLastError = null;
+global.neonAdapter = null;
 
 async function connectDatabases() {
-  try {
-    await mongoose.connect(config.mongoUri, {
-      maxPoolSize: 50,
-      serverSelectionTimeoutMS: 8000,
-      heartbeatFrequencyMS: 10000
-    });
-    dbConnected = true;
-    global.mongoLastError = null;
-    logger.info('✅ MongoDB connected');
-  } catch (err) {
-    dbConnected = false;
-    global.mongoLastError = err.message;
-    logger.warn('⚠️ MongoDB connection failed (server running authoritatively in memory without DB): ' + err.message);
+  // Check Neon Serverless Postgres first if postgres:// connection string provided
+  if (config.databaseUrl && (config.databaseUrl.startsWith('postgres://') || config.databaseUrl.startsWith('postgresql://'))) {
+    global.neonAdapter = new NeonDatabaseAdapter(config.databaseUrl, logger);
+    const neonSuccess = await global.neonAdapter.connectAndMigrate();
+    if (neonSuccess) {
+      dbConnected = true;
+      global.mongoLastError = null;
+    }
+  }
+
+  // If Neon not used or failed, try MongoDB Mongoose
+  if (!dbConnected) {
+    try {
+      await mongoose.connect(config.mongoUri, {
+        maxPoolSize: 50,
+        serverSelectionTimeoutMS: 8000,
+        heartbeatFrequencyMS: 10000
+      });
+      dbConnected = true;
+      global.mongoLastError = null;
+      logger.info('✅ MongoDB connected');
+    } catch (err) {
+      dbConnected = false;
+      global.mongoLastError = err.message;
+      logger.warn('⚠️ MongoDB connection failed (server running authoritatively in memory without DB): ' + err.message);
+    }
   }
 
   try {
@@ -111,6 +131,7 @@ async function connectDatabases() {
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => Math.min(times * 50, 2000)
     });
+    module.exports.redisClient = redisClient;
     redisClient.on('connect', () => logger.info('✅ Redis connected'));
     redisClient.on('error', (err) => logger.warn('⚠️ Redis error: ' + err.message));
   } catch (err) {
@@ -132,7 +153,8 @@ const healthHandler = (req, res) => {
     timestamp: new Date().toISOString(),
     services: {
       database: dbConnected ? 'connected' : 'disconnected',
-      mongoError: dbConnected ? null : (global.mongoLastError || 'Check MONGODB_URI or MongoDB Atlas IP Whitelist (0.0.0.0/0)'),
+      engine: global.neonAdapter?.connected ? 'Neon Serverless Postgres (JSONB)' : (dbConnected ? 'MongoDB Mongoose' : 'Authoritative In-Memory RAM'),
+      error: dbConnected ? null : (global.mongoLastError || 'Paste Neon Postgres URL (postgres://...) or check MONGODB_URI'),
       redis: redisClient?.status === 'ready' ? 'connected' : 'disconnected'
     },
     game: 'Arena Fall Battle Royale'
@@ -253,5 +275,4 @@ async function start() {
 }
 
 start();
-
-module.exports = { app, server, io, logger, config, redisClient };
+module.exports.redisClient = redisClient;

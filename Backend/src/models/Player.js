@@ -148,9 +148,6 @@ const playerSchema = new mongoose.Schema({
 });
 
 // ─── Indexes ────────────────────────────────────────────────────
-playerSchema.index({ username: 1 });
-playerSchema.index({ email: 1 });
-playerSchema.index({ playerId: 1 });
 playerSchema.index({ 'stats.wins': -1 });
 playerSchema.index({ 'stats.kills': -1 });
 playerSchema.index({ level: -1 });

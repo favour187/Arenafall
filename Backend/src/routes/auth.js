@@ -60,6 +60,15 @@ router.post('/register', async (req, res) => {
   try {
     const { username = req.body.email ? req.body.email.split('@')[0] : 'Vanguard_Soldier', email = 'user@arenafall.com', password = 'password123' } = req.body;
 
+    if (global.neonAdapter && global.neonAdapter.connected) {
+      const existing = await global.neonAdapter.getPlayerByUsernameOrEmail(username);
+      if (existing) return res.status(409).json({ success: false, error: 'Username or email already taken', code: 'DUPLICATE' });
+      const neonPlayer = { playerId: `player_${Date.now()}`, username: username.toLowerCase(), displayName: username, email, passwordHash: password, level: 1, credits: 1000 };
+      await global.neonAdapter.savePlayer(neonPlayer);
+      const tokens = generateTokens(neonPlayer);
+      return res.status(201).json({ success: true, message: 'Registration successful (Neon Postgres)', player: sanitizePlayer(neonPlayer), ...tokens });
+    }
+
     if (require('mongoose').connection.readyState !== 1) {
       const memPlayer = {
         playerId: `player_${Date.now()}`,
@@ -122,6 +131,16 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { username = req.body.email ? req.body.email.split('@')[0] : 'Vanguard_Soldier', password = 'password123', email = req.body.username || 'user@arenafall.com' } = req.body;
+
+    if (global.neonAdapter && global.neonAdapter.connected) {
+      let neonPlayer = await global.neonAdapter.getPlayerByUsernameOrEmail(username);
+      if (!neonPlayer) {
+        neonPlayer = { playerId: `player_${Date.now()}`, username: username.toLowerCase(), displayName: username, email, passwordHash: password, level: 15, credits: 2450 };
+        await global.neonAdapter.savePlayer(neonPlayer);
+      }
+      const tokens = generateTokens(neonPlayer);
+      return res.json({ success: true, message: 'Login successful (Neon Postgres)', player: sanitizePlayer(neonPlayer), ...tokens });
+    }
 
     if (require('mongoose').connection.readyState !== 1) {
       let memPlayer = global.memoryStore.players.get(email) || global.memoryStore.players.get(username.toLowerCase());
@@ -205,6 +224,13 @@ router.post('/guest', async (req, res) => {
       ownedCharacters: ['vanguard'],
       loadouts: [{ name: 'Default', character: 'vanguard', primaryWeapon: 'pc90_plasma_cannon', secondaryWeapon: 'p25_sidearm', melee: 'combat_knife', throwable: 'frag_grenade' }]
     };
+
+    if (global.neonAdapter && global.neonAdapter.connected) {
+      await global.neonAdapter.savePlayer(guestPlayer);
+      const tokens = generateTokens(guestPlayer);
+      logger.info(`⚡ Mobile Guest Login (Neon Postgres): ${guestName}`);
+      return res.json({ success: true, message: 'Guest login successful (Neon Postgres)', player: sanitizePlayer(guestPlayer), ...tokens });
+    }
 
     if (require('mongoose').connection.readyState !== 1) {
       global.memoryStore.players.set(guestPlayer.email, guestPlayer);

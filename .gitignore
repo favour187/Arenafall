@@ -44,3 +44,4 @@ crashlytics-*
 *.mp3
 *.mp4
 *.mov
+node_modules/
