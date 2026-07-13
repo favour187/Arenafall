@@ -133,8 +133,7 @@ public class ArenaFallQuickFix : EditorWindow
 
     private void CheckPackage(string packageId, string displayName)
     {
-        var package = UnityEditor.PackageManager.Requests.ListRequest(false);
-        // Simple check: look for the DLL
+        // Simple check: look for loaded assembly
         bool found = System.AppDomain.CurrentDomain.GetAssemblies()
             .Any(a => a.GetName().Name.ToLower().Contains(packageId.Split('.').Last()));
         _log += found ? $"  ✓ {displayName} installed\n" : $"  ⚠ {displayName} NOT found. Install via Window > Package Manager\n";
@@ -142,6 +141,11 @@ public class ArenaFallQuickFix : EditorWindow
 
     private void FixMissingScripts()
     {
+        if (File.Exists("Assets/Scripts/Core/3DCharacterAndVehicleBuilder.cs.meta"))
+        {
+            File.Delete("Assets/Scripts/Core/3DCharacterAndVehicleBuilder.cs.meta");
+            AssetDatabase.Refresh();
+        }
         int fixedCount = 0;
         var allPrefabs = AssetDatabase.FindAssets("t:Prefab");
         foreach (var guid in allPrefabs)

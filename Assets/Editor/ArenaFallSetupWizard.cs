@@ -330,31 +330,8 @@ public class ArenaFallSetupWizard : EditorWindow
         if (!File.Exists(mixerPath))
         {
             Directory.CreateDirectory("Assets/Audio/Mixers");
-            
-            var mixer = new UnityEngine.Audio.AudioMixer();
-            AssetDatabase.CreateAsset(mixer, mixerPath);
-            
-            // Create groups
-            var masterGroup = mixer.CreateMixerGroup("Master");
-            mixer.outputAudioMixerGroup = masterGroup;
-            
-            var musicGroup = mixer.CreateMixerGroup("Music");
-            var sfxGroup = mixer.CreateMixerGroup("SFX");
-            var voiceGroup = mixer.CreateMixerGroup("Voice");
-            var ambientGroup = mixer.CreateMixerGroup("Ambient");
-            
-            // Set up hierarchy
-            masterGroup.children = new[] { musicGroup, sfxGroup, voiceGroup, ambientGroup };
-            
-            // Set volume parameters
-            mixer.SetFloat("MasterVolume", 0f);
-            mixer.SetFloat("MusicVolume", 0f);
-            mixer.SetFloat("SFXVolume", 0f);
-            mixer.SetFloat("VoiceVolume", 0f);
-            
-            EditorUtility.SetDirty(mixer);
-            AssetDatabase.SaveAssets();
-            Debug.Log($"[ArenaFallSetup] Created Audio Mixer at {mixerPath}");
+            AssetDatabase.Refresh();
+            Debug.Log($"[ArenaFallSetup] Audio directory ready at {mixerPath}. If custom multi-channel routing is needed, create ArenaFallMixer via Assets > Create > Audio > Audio Mixer.");
         }
     }
 
@@ -472,7 +449,7 @@ public class ArenaFallSetupWizard : EditorWindow
         data.adsSpreadMultiplier = 0.5f;
         data.aimDownSightsSpeed = 0.3f;
         data.headshotMultiplier = 2.0f;
-        data.rarity = new ArenaFall.Data.ItemRarity { rarityName = "Common", rarityColor = Color.white, tier = 1 };
+        data.rarity = ArenaFall.Interfaces.ItemRarity.Common;
         data.availableFireModes = new[] { ArenaFall.Interfaces.FireMode.Auto };
         
         if (!File.Exists(path))
