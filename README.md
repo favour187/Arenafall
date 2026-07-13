@@ -4,18 +4,14 @@
 **Arena Fall** is an original, commercial-quality multiplayer battle royale game built with Unity. 50-100 players battle in a vast sci-fi training facility, scavenging weapons and equipment while a shrinking energy field forces closer combat. The last player standing wins.
 
 ## Key Features
-- **Original IP:** Unique sci-fi battle royale world with distinct art direction
-- **50-100 Player Matches:** Solo, Duos, and Squads modes
-- **10 Unique Weapons:** Assault Rifles, SMGs, Shotguns, Snipers, LMGs, Pistols, Melee
-- **Vehicle System:** ATV, Motorcycle, Truck, Hovercraft with full physics
-- **AI Bots:** Smart AI opponents with patrol, combat, and looting behaviors
-- **Safe Zone System:** Multi-stage shrinking with increasing damage
-- **Dynamic Weapon Attachments:** Sights, muzzles, grips, magazines
-- **Inventory & Loot:** Backpack system with tiered item management
-- **Character Progression:** XP, levels, battle pass, missions, achievements
-- **Full UI System:** HUD, menus, settings, customization, shop
-- **Multiplayer Ready:** Unity Netcode architecture with state sync
-- **Optimization:** Object pooling, LOD, occlusion culling, Addressables
+- **Original IP & Sci-Fi Compounds:** 7 distinct 3D Compound POIs including our new **Orbital Relay Station** with **Zero-Gravity Jump Pads (`LaunchPadBouncer`)** that propel players 28 meters upward into low-G air battles.
+- **50-100 Player Lobbies:** Solo, Duos, and Squads modes powered by Unity Netcode for GameObjects (`port 7777`, `MaxPacketQueueSize = 1024`) with spatial grid delta partitioning (`gridX_gridZ`) and adaptive `30Hz/15Hz` distance throttling.
+- **11 Unique Weapons & Stands:** Includes our new heavy **PC-90 Plasma Cannon (`pc90_plasma_cannon`)**, Assault Rifles, SMGs, Shotguns, Snipers, and Melee blades resting on interactive 3D compound weapon racks (`Spawn3DWeaponRack`).
+- **5 Drivable Physics Vehicles:** Includes our new bipedal **Armored Mech Walker (`armored_mech_walker.png`)**, Ranger ATV, Sci-Fi Hovercraft (`anti-gravity spring physics`), Cyclone Recon Bike, and Heavy Armored Truck.
+- **Modern AAA Battle Royale UI & Touch Controls:** Beveled dual-layer sci-fi buttons with neon side bars (`SideNeonStrip`) plus **Virtual On-Screen Mobile & iOS Touch Controls (`MobileTouchControls.cs`)** featuring virtual joysticks and metallic touch buttons (`[🔥 FIRE]`, `[🎯 AIM]`, `[🦘 JUMP]`, `[🔄 RELOAD]`, `[✋ INTERACT / DRIVE]`).
+- **Instant Mobile Guest & Online Auth:** Play immediately with our one-tap **`⚡ PLAY AS GUEST`** mobile flow (`/api/v1/auth/guest`) or full email/password JWT accounts (`/api/v1/auth/login`).
+- **Authoritative Backend Supervision Daemon:** Built-in Node.js supervisor (`BackendSupervisionService.js`) monitoring tick rates (`30.0 Hz`), memory consumption, and automated **24-Hour Shadow Bans** when `AntiCheatService.js` detects $\ge 3$ movement/combat anomalies.
+- **Full Glassmorphic Web Portals:** Live Admin Dashboard (`/admin`) and Player Portal (`/`) with interactive catalog modals (`+ Add Item`, `Edit Season`), real-time Socket.IO telemetry, and complete Terms of Service & Privacy Policy overlays.
 
 ## Project Structure
 
