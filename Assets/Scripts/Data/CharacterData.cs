@@ -1,4 +1,5 @@
 using UnityEngine;
+using ArenaFall.Interfaces;
 
 namespace ArenaFall.Data
 {
@@ -57,13 +58,5 @@ namespace ArenaFall.Data
         Reaper,
         Sentinel,
         Nomad
-    }
-
-    [System.Serializable]
-    public class ItemRarity
-    {
-        public string rarityName = "Common";
-        public Color rarityColor = Color.white;
-        public int tier = 1;
     }
 }

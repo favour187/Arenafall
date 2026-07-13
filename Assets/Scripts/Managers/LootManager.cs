@@ -150,7 +150,7 @@ namespace ArenaFall.Managers
             Destroy(spawnPoint.gameObject, 0.1f);
         }
 
-        private LootTableData.LootEntry SelectRandomEntry(LootTableData table)
+        private LootEntry SelectRandomEntry(LootTableData table)
         {
             if (table.lootEntries.Count == 0) return null;
 

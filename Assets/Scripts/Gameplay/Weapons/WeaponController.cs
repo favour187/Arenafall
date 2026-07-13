@@ -5,6 +5,7 @@ using ArenaFall.Data;
 using ArenaFall.Interfaces;
 using ArenaFall.Events;
 using ArenaFall.Managers;
+using ArenaFall.Gameplay.Characters;
 
 namespace ArenaFall.Gameplay.Weapons
 {

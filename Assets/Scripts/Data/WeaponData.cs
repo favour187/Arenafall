@@ -98,16 +98,6 @@ namespace ArenaFall.Data
         Throwable
     }
 
-    public enum AttachmentSlot
-    {
-        Sight,
-        Muzzle,
-        Grip,
-        Magazine,
-        Barrel,
-        Stock
-    }
-
     [System.Serializable]
     public class AttachmentSlot
     {

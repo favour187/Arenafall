@@ -63,7 +63,6 @@ namespace ArenaFall.UI.HUD
         private CharacterHealth _playerHealth;
         private PlayerCharacterController _playerController;
         private CameraManager _cameraManager;
-        private EventBus _eventBus;
 
         private void Awake()
         {

@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using Unity.Collections;
 using ArenaFall.Core;
 using ArenaFall.Events;
 using ArenaFall.Gameplay.Characters;

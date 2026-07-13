@@ -1,5 +1,6 @@
 using UnityEngine;
 using ArenaFall.Core;
+using ArenaFall.Interfaces;
 
 namespace ArenaFall.Events
 {
@@ -186,18 +187,6 @@ namespace ArenaFall.Events
         Item,
         Skin,
         BattlePassXP
-    }
-
-    public enum DamageType
-    {
-        Bullet,
-        Melee,
-        Explosion,
-        Fire,
-        Zone,
-        Fall,
-        Drowning,
-        Vehicle
     }
 
     public enum GameState
